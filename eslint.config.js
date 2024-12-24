@@ -50,7 +50,7 @@ export default antfu({
   },
   react: {
     overrides: {
-      'react-refresh/only-export-components': 'off'
+      'react-refresh/only-export-components': 'off',
     },
   },
 });
