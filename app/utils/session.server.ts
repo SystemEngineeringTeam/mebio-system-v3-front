@@ -13,7 +13,7 @@ export function getSessionStorage(sessionSecret: string) {
       cookie: {
         name: '__session',
         httpOnly: true,
-        maxAge: 600,
+        maxAge: 60 * 60 * 24 * 7,
         path: '/',
         sameSite: 'lax',
         secrets: [sessionSecret],
