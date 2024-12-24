@@ -6,6 +6,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from '@remix-run/react';
+import Header from './components/Header';
+import GlobalStyles from './GlobalStyles';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -22,7 +24,7 @@ export const links: LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <head>
         <meta charSet="utf-8" />
         <meta content="width=device-width, initial-scale=1" name="viewport" />
@@ -30,7 +32,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <GlobalStyles />
+        <Header />
+        <main>{children}</main>
         <ScrollRestoration />
         <Scripts />
       </body>

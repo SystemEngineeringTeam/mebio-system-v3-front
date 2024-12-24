@@ -1,7 +1,7 @@
 import antfu from '@antfu/eslint-config';
 
 export default antfu({
-  ignores: ['*.md', '*.json', 'functions/**/*', '.github/**/*', 'wrangler.toml'],
+  ignores: ['*.md', '*.json', '.github/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
   formatters: true,
   stylistic: {
     quotes: 'single',
@@ -40,8 +40,9 @@ export default antfu({
       'ts/strict-boolean-expressions': ['error'],
       'ts/switch-exhaustiveness-check': ['error'],
       'ts/array-type': ['error', { default: 'array-simple' }],
-      'ts/no-restricted-types': ['error', { types: { Omit: 'Use `OmitStrict`.' } }],
+      'ts/no-restricted-types': 'off',
       'ts/no-unsafe-argument': 'error',
+      'node/prefer-global/process': 'off',
     },
   },
   rules: {
@@ -49,7 +50,7 @@ export default antfu({
   },
   react: {
     overrides: {
-      'react-refresh/only-export-components': 'off',
+      'react-refresh/only-export-components': 'off'
     },
   },
 });

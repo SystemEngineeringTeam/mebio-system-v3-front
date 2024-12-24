@@ -1,40 +1,38 @@
-import type { MetaFunction } from '@remix-run/cloudflare';
-import Button from '@/components/Button';
-import Dialog from '@/components/Dialog';
-import { useCallback, useState } from 'react';
-import { styled } from 'restyle';
+import type { AuthUser } from '@/utils/auth.server';
+import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/cloudflare';
+import AuthContext from '@/components/AuthtContext';
+import { getAuthenticator } from '@/utils/auth.server';
+import { redirect } from '@remix-run/cloudflare';
+import { Form, Outlet, useLoaderData } from '@remix-run/react';
 
 export const meta: MetaFunction = () => [
   { title: 'New Remix App' },
   { name: 'description', content: 'Welcome to Remix!' },
 ];
 
-const Center = styled('div', {
-  'display': 'flex',
-  'justifyContent': 'center',
-  'alignItems': 'center',
-  'height': '100vh',
-  'fontSize': '2rem',
+interface LoaderData {
+  user: AuthUser;
+}
 
-  '> div': {
-    textAlign: 'center',
-  },
-});
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const authenticator = getAuthenticator(context.cloudflare.env);
+  const user = await authenticator.isAuthenticated(request);
+  if (user === null) {
+    return redirect('/login');
+  }
+
+  return Response.json({ user });
+};
 
 export default function Index() {
-  const [open, setOpen] = useState(false);
-
-  const toggleDialog = useCallback(() => {
-    setOpen((prev) => !prev);
-  }, []);
+  const { user } = useLoaderData<LoaderData>();
 
   return (
-    <Center>
-      <div>
-        <h1>Hello, Remix!</h1>
-        <Button onClick={() => { toggleDialog(); }}>Click me!!</Button>
-        <Dialog onOpenChange={setOpen} open={open} />
-      </div>
-    </Center>
+    <AuthContext value={user}>
+      <Outlet />
+      <Form action="/logout" method="post">
+        <button type="submit">Logout</button>
+      </Form>
+    </AuthContext>
   );
-}
+};
