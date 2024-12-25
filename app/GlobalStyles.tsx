@@ -11,8 +11,11 @@ export default function GlobalStyles() {
 
           '--primary-color': '#1890FF',
           '--on-primary-color': '#ffffff',
+          '--text-color': '#1c1c1c',
           '--background-color': '#ffffff',
+          '--background-color-dark': '#f0f2f5',
           '--on-background-color': '#002766',
+          '--shadow-color': 'hsl(206 22% 7% / 35%) 0px 10px 38px -10px, hsl(206 22% 7% / 20%) 0px 10px 20px -15px',
 
           '--fontsize-xs': '0.6rem',
           '--fontsize-sm': '0.8rem',
@@ -25,7 +28,7 @@ export default function GlobalStyles() {
           '--radius-md': '8px',
           '--radius-lg': '16px',
 
-          '--header-height': '45px',
+          '--header-height': '50px',
         },
         ':root': {
           fontSize: '16px',

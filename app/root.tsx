@@ -1,13 +1,18 @@
-import type { LinksFunction } from '@remix-run/cloudflare';
+import type { AuthUser } from '@/utils/auth.server';
+import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/cloudflare';
+import AuthUserContext from '@/components/AuthtContext';
+import Header from '@/components/Header';
+import GlobalStyles from '@/GlobalStyles';
+import { getAuthenticator } from '@/utils/auth.server';
 import {
   Links,
   Meta,
   Outlet,
+  redirect,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from '@remix-run/react';
-import Header from './components/Header';
-import GlobalStyles from './GlobalStyles';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -22,7 +27,26 @@ export const links: LinksFunction = () => [
   },
 ];
 
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const authenticator = getAuthenticator(context.cloudflare.env);
+  const user = await authenticator.isAuthenticated(request);
+
+  const url = new URL(request.url);
+
+  if (user === null && url.pathname !== '/login') {
+    return redirect('/login');
+  }
+
+  return Response.json({ user });
+};
+
+interface LoaderData {
+  user: AuthUser;
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { user } = useLoaderData<LoaderData>();
+
   return (
     <html lang="ja">
       <head>
@@ -32,9 +56,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <GlobalStyles />
-        <Header />
-        <main>{children}</main>
+        <AuthUserContext value={user}>
+          <GlobalStyles />
+          <Header />
+          <main>{children}</main>
+        </AuthUserContext>
         <ScrollRestoration />
         <Scripts />
       </body>
