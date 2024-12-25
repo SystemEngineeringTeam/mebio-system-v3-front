@@ -43,6 +43,7 @@ export default antfu({
       'ts/no-restricted-types': 'off',
       'ts/no-unsafe-argument': 'error',
       'node/prefer-global/process': 'off',
+      'ts/no-empty-object-type': 'off',
     },
   },
   rules: {
