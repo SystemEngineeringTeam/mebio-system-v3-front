@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/cloudflare';
-import { getAuthenticator } from '@/utils/auth.server';
+import { getAuthenticator } from '@/services/auth.server';
 import { redirect } from '@remix-run/cloudflare';
 import { Outlet } from '@remix-run/react';
 

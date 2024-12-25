@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs } from '@remix-run/cloudflare';
-import { getAuthenticator } from '@/utils/auth.server';
+import { getAuthenticator } from '@/services/auth.server';
 import { redirect } from '@remix-run/cloudflare';
 
 export function loader() {
@@ -8,5 +8,5 @@ export function loader() {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const authenticator = getAuthenticator(context.cloudflare.env);
-  return authenticator.authenticate('google', request);
+  return authenticator.authenticate('auth0', request);
 }
