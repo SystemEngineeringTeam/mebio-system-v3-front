@@ -2,7 +2,7 @@ import { authUserContext } from '@/components/AuthtContext';
 import { Text } from '@/components/basic';
 import * as RadixAvator from '@radix-ui/react-avatar';
 import { Content as PopoverContent, Portal as PopoverPortal, Root as PopoverRoot, Trigger as PopoverTrigger } from '@radix-ui/react-popover';
-import { Form, Link } from '@remix-run/react';
+import { Form } from '@remix-run/react';
 import { useContext } from 'react';
 import { styled } from 'restyle';
 
