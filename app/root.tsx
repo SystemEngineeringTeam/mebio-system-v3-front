@@ -1,9 +1,9 @@
-import type { AuthUser } from '@/utils/auth.server';
+import type { AuthUser } from '@/services/auth.server';
 import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/cloudflare';
 import AuthUserContext from '@/components/AuthtContext';
 import Header from '@/components/Header';
 import GlobalStyles from '@/GlobalStyles';
-import { getAuthenticator } from '@/utils/auth.server';
+import { getAuthenticator } from '@/services/auth.server';
 import {
   Links,
   Meta,

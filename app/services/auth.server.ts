@@ -1,5 +1,5 @@
 import { Authenticator } from 'remix-auth';
-import { GoogleStrategy } from 'remix-auth-google';
+import { Auth0Strategy } from 'remix-auth-auth0';
 import { getSessionStorage } from './session.server';
 
 export interface AuthUser {
@@ -18,19 +18,20 @@ export function getAuthenticator(env: Env) {
 
   const sessionStorage = getSessionStorage(env.SESSION_SECRET);
   authenticator = new Authenticator<AuthUser>(sessionStorage);
-  authenticator.use(new GoogleStrategy<AuthUser>(
+  authenticator.use(new Auth0Strategy(
     {
-      clientID: env.FIREBASE_AUTH_CLIENT_ID,
-      clientSecret: env.FIREBASE_AUTH_CLIENT_SECRET,
-      callbackURL: env.FIREBASE_AUTH_CALLBACK_URL,
+      callbackURL: env.AUTH0_CALLBACK_URL,
+      clientID: env.AUTH0_CLIENT_ID,
+      clientSecret: env.AUTH0_CLIENT_SECRET,
+      domain: env.AUTH0_DOMAIN,
     },
     async ({ profile }) => ({
-      name: profile.displayName,
-      email: profile.emails.length > 0 ? profile.emails[0].value : '',
-      id: profile.id,
-      iconUrl: profile.photos.length > 0 ? profile.photos[0].value : '',
+      id: profile?.id ?? '',
+      name: profile?.displayName ?? '',
+      email: profile?.emails?.[0]?.value ?? '',
+      iconUrl: profile?.photos?.[0]?.value ?? '',
     }),
-  ));
+  ), 'auth0');
 
   return authenticator;
 }

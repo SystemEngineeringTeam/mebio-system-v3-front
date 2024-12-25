@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
-import { getAuthenticator } from '@/utils/auth.server';
-import { getSessionStorage } from '@/utils/session.server';
+import { getAuthenticator } from '@/services/auth.server';
+import { getSessionStorage } from '@/services/session.server';
 import { redirect } from '@remix-run/cloudflare';
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -8,7 +8,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   const authenticator = getAuthenticator(context.cloudflare.env);
 
-  const user = await authenticator.authenticate('google', request);
+  const user = await authenticator.authenticate('auth0', request);
 
   if (user === null) {
     return redirect('/login');
@@ -18,7 +18,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get('Cookie'));
 
   session.set(authenticator.sessionKey, user);
-  session.set(authenticator.sessionStrategyKey ?? 'strategy', 'google');
+  session.set(authenticator.sessionStrategyKey ?? 'strategy', 'auth0');
   const cookie = await commitSession(session, {
     expires: new Date(Date.now() + 600_000),
   });

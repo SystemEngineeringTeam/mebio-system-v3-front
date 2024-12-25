@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import { Button, Text } from '@/components/basic';
-import { getAuthenticator } from '@/utils/auth.server';
+import { getAuthenticator } from '@/services/auth.server';
 import { redirect } from '@remix-run/cloudflare';
 import { Form } from '@remix-run/react';
 import { styled } from 'restyle';

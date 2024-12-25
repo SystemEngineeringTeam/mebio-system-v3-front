@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/utils/auth.server';
+import type { AuthUser } from '@/services/auth.server';
 import { createContext } from 'react';
 
 export const authUserContext = createContext<AuthUser | null>(null);
