@@ -63,17 +63,6 @@ const MenuItems = styled('div', {
   cursor: 'pointer',
 });
 
-const MyPageLink = styled(Link, {
-  background: 'none',
-  display: 'block',
-  width: '100%',
-  cursor: 'pointer',
-  outline: 'none',
-  textDecoration: 'none',
-  color: 'var(--text-color)',
-  fontSize: 'var(--fontsize-md)',
-});
-
 const CutomButton = styled('button', {
   'padding': '5px 12px',
   'background': 'none',
