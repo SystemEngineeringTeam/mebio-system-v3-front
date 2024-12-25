@@ -5,10 +5,12 @@ export default function GlobalStyles() {
     <RestyleGlobalStyles>
       {{
         '*': {
-          'margin': 'unset',
-          'padding': 'unset',
-          'boxSizing': 'border-box',
-
+          margin: 'unset',
+          padding: 'unset',
+          boxSizing: 'border-box',
+        },
+        ':root': {
+          'fontSize': '16px',
           '--primary-color': '#1890FF',
           '--on-primary-color': '#ffffff',
           '--text-color': '#1c1c1c',
@@ -29,9 +31,6 @@ export default function GlobalStyles() {
           '--radius-lg': '16px',
 
           '--header-height': '50px',
-        },
-        ':root': {
-          fontSize: '16px',
         },
         'header': {
           height: 'var(--header-height)',
