@@ -6,6 +6,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  iconUrl: string;
 }
 
 let authenticator: Authenticator<AuthUser>;
@@ -27,6 +28,7 @@ export function getAuthenticator(env: Env) {
       name: profile.displayName,
       email: profile.emails.length > 0 ? profile.emails[0].value : '',
       id: profile.id,
+      iconUrl: profile.photos.length > 0 ? profile.photos[0].value : '',
     }),
   ));
 

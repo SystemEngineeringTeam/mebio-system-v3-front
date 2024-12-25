@@ -10,11 +10,3 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const authenticator = getAuthenticator(context.cloudflare.env);
   return authenticator.authenticate('google', request);
 }
-
-export default function GoogleLoginPage() {
-  return (
-    <div>
-      hi
-    </div>
-  );
-}
