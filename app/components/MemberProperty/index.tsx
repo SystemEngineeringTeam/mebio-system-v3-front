@@ -63,14 +63,14 @@ export default function MemberProperty({ editable = true, disabled = false, prop
       return dayjs(value).format(rest.format ?? 'YYYY年M月D日');
     }
     else if (rest.type === 'select') {
-      return rest.options.find((option) => option.key === value)?.name ?? value;
+      return rest.options.find((option) => option.key === value)?.name ?? '';
     }
-    else {
-      return value.toString();
-    }
+
+    return value.toString();
   }, [rest, value]);
 
-  const showValueString = !(editable || (!editable && rest.type === 'icon'));
+  const showValueString = !editable;
+  // const showValueString = !(editable || (!editable && rest.type === 'icon'));
   const showInput = editable && rest.type !== 'select';
   const showSelect = editable && rest.type === 'select';
   const showIcon = rest.type === 'icon';
@@ -94,7 +94,7 @@ export default function MemberProperty({ editable = true, disabled = false, prop
       <Text align="center" bold size="lg">{property}</Text>
 
       <ValueBox>
-        {showValueString && <Text size="lg">{valueString}</Text>}
+        {showValueString && <Text height="32.5px" nowrap overflow="scroll" size="lg">{valueString}</Text>}
         {showInput && <Input disabled={disabled} onChange={inputHandle} value={v.toString()} />}
         {showSelect && <Select disabled={disabled} onChange={selectHandle} options={rest.options} value={v.toString()} />}
         {showIcon && <IconImage alt="icon" src={v.toString()} />}
