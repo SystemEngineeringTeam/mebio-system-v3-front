@@ -1,7 +1,8 @@
 import type { Member, MemberPublicInfo } from '@/types/member';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
+import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import MemberPage from '@/pages/MemberPage';
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData, useRouteError } from '@remix-run/react';
 
 interface LoaderResult {
   member: Member | MemberPublicInfo;
@@ -43,6 +44,10 @@ export function loader({ params }: LoaderFunctionArgs): LoaderResult {
     return { member };
   }
 
+  if (params.uuid.length < 5) {
+    throw new Response(null, { status: 404 });
+  }
+
   const member: MemberPublicInfo = {
     public: {
       type: 'active',
@@ -65,6 +70,10 @@ export function loader({ params }: LoaderFunctionArgs): LoaderResult {
 
 export default function Index() {
   const { member } = useLoaderData<LoaderResult>();
-
   return <MemberPage member={member} />;
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  return <ErrorBoundaryPage error={error} notFoundItem="部員情報" />;
 }
