@@ -1,9 +1,10 @@
-import type { AuthUser } from '@/services/auth.server';
+import type { MemberStatus } from '@/types/member';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import AuthUserContext from '@/components/AuthtContext';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import GlobalStyles from '@/GlobalStyles';
+import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import { getAuthenticator } from '@/services/auth.server';
 import {
   Links,
@@ -38,17 +39,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   if (user === null && url.pathname !== '/login') {
     return redirect('/login');
+  } else if (user === null) {
+    throw new Response(null, { status: 401 });
   }
 
-  return Response.json({ user });
+  const status: MemberStatus = {
+    isAdmin: true,
+    status: 'temporary',
+  };
+
+  return { user: { ...user, ...status } };
 };
 
-interface LoaderData {
-  user: AuthUser;
-}
-
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user } = useLoaderData<LoaderData>();
+  const { user } = useLoaderData<typeof loader>();
 
   return (
     <html lang="ja">
@@ -74,4 +78,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return <Outlet />;
+}
+
+export function ErrorBoundary({ error }: { error: Error }) {
+  return <ErrorBoundaryPage error={error} notFoundItem="ページ" />;
 }

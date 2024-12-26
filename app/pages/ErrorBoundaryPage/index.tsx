@@ -14,6 +14,12 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
           <Link to="/">ホームへ</Link>
         </ErrorPageBase>
       );
+    } else if (error.status === 401) {
+      return (
+        <ErrorPageBase message="認証に失敗しました．" title="401 Unauthorized">
+          <Link to="/login">ログイン</Link>
+        </ErrorPageBase>
+      );
     } else if (error.status === 500) {
       return (
         <ErrorPageBase message="サーバーでエラーが発生しました．しばらくしてから再度お試しください" title="500 Internal Server Error">

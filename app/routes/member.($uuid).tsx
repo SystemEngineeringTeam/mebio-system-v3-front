@@ -12,6 +12,8 @@ export function loader({ params }: LoaderFunctionArgs): LoaderData {
   // TODO: 置き換える
   if (params.uuid === undefined) {
     const member: Member = {
+      isAdmin: false,
+      status: 'registered',
       public: {
         type: 'active',
         uuid: params.uuid ?? '00000000-0000-0000-0000-000000000000',
