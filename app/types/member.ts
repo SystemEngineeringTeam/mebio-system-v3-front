@@ -1,7 +1,7 @@
 import type { GRADES, POSITIONS } from '@/consts/member';
 
-export type Grade = typeof GRADES[number] | {};
-export type Position = typeof POSITIONS[number] | {};
+export type Grade = typeof GRADES[number];
+export type Position = typeof POSITIONS[number] | null;
 export type Gender = 'male' | 'female' | 'other';
 export interface Address {
   zipCode: string;
@@ -31,7 +31,7 @@ export interface MemberBasePrivateInfo {
 export interface ActiveMember extends MemberBaseInfo {
   type: 'active';
   studentId: string;
-  position: string;
+  position: Position;
   grade: Grade;
   expectedGraduationYear: number;
 }
