@@ -4,11 +4,11 @@ import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import MemberPage from '@/pages/MemberPage';
 import { useLoaderData, useRouteError } from '@remix-run/react';
 
-interface LoaderResult {
+interface LoaderData {
   member: Member | MemberPublicInfo;
 }
 
-export function loader({ params }: LoaderFunctionArgs): LoaderResult {
+export function loader({ params }: LoaderFunctionArgs): LoaderData {
   // TODO: 置き換える
   if (params.uuid === undefined) {
     const member: Member = {
@@ -69,7 +69,7 @@ export function loader({ params }: LoaderFunctionArgs): LoaderResult {
 }
 
 export default function Index() {
-  const { member } = useLoaderData<LoaderResult>();
+  const { member } = useLoaderData<LoaderData>();
   return <MemberPage member={member} />;
 }
 

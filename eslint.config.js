@@ -16,6 +16,9 @@ export default antfu({
       'ts/consistent-type-definitions': ['error', 'interface'],
       'ts/explicit-function-return-type': 'off',
       'style/arrow-parens': ['error', 'always'],
+      'style/brace-style': ['error', '1tbs', { allowSingleLine: true }],
+      'antfu/consistent-list-newline': ['error', { ArrayExpression: false }],
+      'antfu/if-newline': 'off',
     },
   },
   typescript: {
@@ -44,6 +47,7 @@ export default antfu({
       'ts/no-unsafe-argument': 'error',
       'node/prefer-global/process': 'off',
       'ts/no-empty-object-type': 'off',
+      'func-style': ['error', 'declaration'],
     },
   },
   rules: {

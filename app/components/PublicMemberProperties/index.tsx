@@ -37,7 +37,7 @@ export default function PublicMemberProperties({ publicInfo, editable }: Props) 
       <MemberProperty editable={editable} property="名前(カナ)" type="text" value={fullNameKana} />
       <MemberProperty editable={editable} property="Slack表示名" type="text" value={slackDisplayName} />
       <MemberProperty editable={editable} property="アイコン" type="icon" value={publicInfo.iconUrl} />
-      <MemberProperty editable={editable} options={TYPES} property="タイプ" type="select" value={toTypeName(publicInfo.type) ?? ''} />
+      <MemberProperty editable={editable} options={TYPES} property="タイプ" type="select" value={publicInfo.type} />
 
       {
         publicInfo.type === 'active' && (

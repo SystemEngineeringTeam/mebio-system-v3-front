@@ -7,5 +7,6 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-  }
+  },
+  "typescript.preferences.importModuleSpecifier": "non-relative"
 }

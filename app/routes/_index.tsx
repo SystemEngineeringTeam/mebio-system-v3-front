@@ -1,23 +1,167 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/cloudflare';
-import { getAuthenticator } from '@/services/auth.server';
-import { redirect } from '@remix-run/cloudflare';
-import { Outlet } from '@remix-run/react';
+import type { Member } from '@/types/member';
+import MemberListPage from '@/pages/MemberListPage';
+import { useLoaderData } from '@remix-run/react';
 
-export const meta: MetaFunction = () => [
-  { title: 'New Remix App' },
-  { name: 'description', content: 'Welcome to Remix!' },
-];
+export function meta() {
+  return [
+    { title: 'New Remix App' },
+    { name: 'description', content: 'Welcome to Remix!' },
+  ];
+}
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
-  const authenticator = getAuthenticator(context.cloudflare.env);
-  const user = await authenticator.isAuthenticated(request);
-  if (user === null) {
-    return redirect('/login');
-  }
+interface LoaderData {
+  members: Record<string, Array<Member['public']>>;
+}
 
-  return Response.json({ user });
-};
+export function loader(): LoaderData {
+  const members: Array<Member['public']> = [
+    {
+      type: 'active',
+      uuid: '00000000-0000-0000-0000-000000000000',
+      firstName: '智',
+      lastName: '佐藤',
+      firstNameKana: 'サトル',
+      lastNameKana: 'サトウ',
+      expectedGraduationYear: 2027,
+      grade: 'B2',
+      position: '会計',
+      studentId: 'k20000',
+      slackDisplayName: 'k23075_佐藤智',
+      iconUrl: 'https://satooru.me/icon.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'active',
+      uuid: '11111111-1111-1111-1111-111111111111',
+      firstName: '安堵',
+      lastName: '安藤',
+      firstNameKana: 'アンド',
+      lastNameKana: 'アンドウ',
+      expectedGraduationYear: 2029,
+      grade: 'B2',
+      position: null,
+      studentId: 'k20001',
+      slackDisplayName: 'k20001_安藤安堵',
+      iconUrl: 'https://satooru.me/default/penguin.webp',
+    },
+    {
+      type: 'alumni',
+      uuid: '22222222-2222-2222-2222-222222222222',
+      firstName: '邪馬',
+      lastName: '山田',
+      firstNameKana: 'ヤマ',
+      lastNameKana: 'ヤマダ',
+      graduationYear: 2020,
+      oldPosition: '会長',
+      slackDisplayName: 'k10000_山田邪馬',
+      iconUrl: 'https://satooru.me/icon.webp',
+    },
+    {
+      type: 'external',
+      uuid: '22222222-2222-2222-2222-222222222222',
+      firstName: '彩都',
+      lastName: '斎藤',
+      firstNameKana: 'サイト',
+      lastNameKana: 'サイトウ',
+      expectedGraduationYear: 2029,
+      slackDisplayName: 'k10000_山田邪馬',
+      schoolName: '愛知ペンギン大学',
+      organization: 'ペンギン研究会',
+      iconUrl: 'https://satooru.me/icon.webp',
+    },
+  ];
+  const groupedMembers = Object.groupBy(members, (m) => {
+    if (m.type === 'active') return m.grade;
+    else return m.type;
+  });
+  return { members: groupedMembers };
+}
 
 export default function Index() {
-  return <Outlet />;
+  const { members } = useLoaderData<LoaderData>();
+
+  return <MemberListPage members={members} />;
 };

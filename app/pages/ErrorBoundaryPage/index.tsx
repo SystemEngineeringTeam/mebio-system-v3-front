@@ -14,24 +14,20 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
           <Link to="/">ホームへ</Link>
         </ErrorPageBase>
       );
-    }
-    else if (error.status === 500) {
+    } else if (error.status === 500) {
       return (
         <ErrorPageBase message="サーバーでエラーが発生しました．しばらくしてから再度お試しください" title="500 Internal Server Error">
           <Link to="/">ホームへ</Link>
         </ErrorPageBase>
       );
-    }
-    else {
+    } else {
       return (
         <ErrorPageBase message="エラーが発生しました．" title={`${error.status} ${error.statusText}`}>
           <Link to="/">ホームへ</Link>
         </ErrorPageBase>
       );
     }
-  }
-
-  else if (error instanceof Error) {
+  } else if (error instanceof Error) {
     return (
       <div>
         <ErrorPageBase message="エラーが発生しました．" title="システムエラー">
