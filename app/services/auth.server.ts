@@ -17,10 +17,12 @@ export function getAuthenticator(env: Env) {
   }
 
   const sessionStorage = getSessionStorage(env.SESSION_SECRET);
+  const callbackURL = new URL(env.CF_PAGES_URL);
+  callbackURL.pathname = '/auth/callback';
   authenticator = new Authenticator<AuthUser>(sessionStorage);
   authenticator.use(new Auth0Strategy(
     {
-      callbackURL: env.AUTH0_CALLBACK_URL,
+      callbackURL: callbackURL.toString(),
       clientID: env.AUTH0_CLIENT_ID,
       clientSecret: env.AUTH0_CLIENT_SECRET,
       domain: env.AUTH0_DOMAIN,
