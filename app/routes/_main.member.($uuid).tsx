@@ -8,7 +8,7 @@ interface LoaderData {
   member: Member | MemberPublicInfo;
 }
 
-export function loader({ params }: LoaderFunctionArgs): LoaderData {
+export function loader({ params }: LoaderFunctionArgs): LoaderData | Response {
   // TODO: 置き換える
   if (params.uuid === undefined) {
     const member: Member = {

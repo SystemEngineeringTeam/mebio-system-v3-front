@@ -1,3 +1,4 @@
+import type { AuthUser } from '@/services/auth.server';
 import type { MemberStatus } from '@/types/member';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import AuthUserContext from '@/components/AuthtContext';
@@ -13,7 +14,8 @@ import {
   redirect,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
+  useRouteError,
+  useRouteLoaderData,
 } from '@remix-run/react';
 
 export function links() {
@@ -31,7 +33,9 @@ export function links() {
   ];
 }
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+type LoaderData = MemberStatus & AuthUser | null;
+
+export async function loader({ request, context }: LoaderFunctionArgs): Promise<LoaderData | Response> {
   const authenticator = getAuthenticator(context.cloudflare.env);
   const user = await authenticator.isAuthenticated(request);
 
@@ -40,7 +44,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   if (user === null && url.pathname !== '/login') {
     return redirect('/login');
   } else if (user === null) {
-    throw new Response(null, { status: 401 });
+    throw new Response(null, { status: 404 });
   }
 
   const status: MemberStatus = {
@@ -48,11 +52,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     status: 'temporary',
   };
 
-  return { user: { ...user, ...status } };
+  return { ...user, ...status };
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user } = useLoaderData<typeof loader>();
+  const user = useRouteLoaderData<LoaderData>('root');
 
   return (
     <html lang="ja">
@@ -63,23 +67,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AuthUserContext value={user}>
+        <AuthUserContext value={user ?? null}>
           <GlobalStyles />
           <Header />
           <main>{children}</main>
           <Footer />
+          <ScrollRestoration />
+          <Scripts />
         </AuthUserContext>
-        <ScrollRestoration />
-        <Scripts />
       </body>
     </html>
   );
 }
 
-export default function App() {
+export default function Index() {
   return <Outlet />;
 }
 
-export function ErrorBoundary({ error }: { error: Error }) {
+export function ErrorBoundary() {
+  const error = useRouteError();
   return <ErrorBoundaryPage error={error} notFoundItem="ページ" />;
 }
