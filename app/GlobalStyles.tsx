@@ -17,7 +17,7 @@ export default function GlobalStyles() {
           '--background-color': '#ffffff',
           '--background-color-dark': '#f0f2f5',
           '--on-background-color': '#002766',
-          '--shadow-color': 'hsl(206 22% 7% / 35%) 0px 10px 38px -10px, hsl(206 22% 7% / 20%) 0px 10px 20px -15px',
+          '--shadow-color': 'rgba(0, 0, 0, 1)',
 
           '--fontsize-xs': '0.6rem',
           '--fontsize-sm': '0.8rem',
@@ -31,6 +31,8 @@ export default function GlobalStyles() {
           '--radius-lg': '16px',
 
           '--header-height': '50px',
+
+          '--shadow': 'hsl(206 22% 7% / 35%) 0px 10px 38px -10px, hsl(206 22% 7% / 20%) 0px 10px 20px -15px',
         },
         'header': {
           height: 'var(--header-height)',

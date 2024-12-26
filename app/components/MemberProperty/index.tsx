@@ -61,8 +61,7 @@ export default function MemberProperty({ editable = true, disabled = false, prop
   const valueString = useMemo(() => {
     if (rest.type === 'date') {
       return dayjs(value).format(rest.format ?? 'YYYY年M月D日');
-    }
-    else if (rest.type === 'select') {
+    } else if (rest.type === 'select') {
       return rest.options.find((option) => option.key === value)?.name ?? '';
     }
 
@@ -70,7 +69,6 @@ export default function MemberProperty({ editable = true, disabled = false, prop
   }, [rest, value]);
 
   const showValueString = !editable;
-  // const showValueString = !(editable || (!editable && rest.type === 'icon'));
   const showInput = editable && rest.type !== 'select';
   const showSelect = editable && rest.type === 'select';
   const showIcon = rest.type === 'icon';

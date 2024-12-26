@@ -10,9 +10,21 @@ interface Props extends React.ComponentProps<typeof TextBase> {
   align?: 'left' | 'center' | 'right';
   nowrap?: boolean;
   overflow?: 'hidden' | 'visible' | 'scroll' | 'auto';
+  textOverflow?: 'clip' | 'ellipsis';
 }
 
-export default function Text({ children, color, size = 'md', height, bold = false, align, nowrap = false, overflow, ...props }: Props) {
+export default function Text({
+  children,
+  color,
+  size = 'md',
+  height,
+  bold = false,
+  align,
+  nowrap = false,
+  overflow,
+  textOverflow,
+  ...props
+}: Props) {
   const [className, Styles] = css({
     color: color ? `var(--${color}-color)` : 'var(--text-color)',
     fontSize: `var(--fontsize-${size})`,
@@ -22,6 +34,7 @@ export default function Text({ children, color, size = 'md', height, bold = fals
     lineHeight: height,
     height,
     overflow,
+    textOverflow,
   });
 
   return (

@@ -1,8 +1,10 @@
-import type { ActionFunctionArgs, LoaderFunction } from '@remix-run/cloudflare';
+import type { ActionFunctionArgs } from '@remix-run/cloudflare';
 import { getAuthenticator } from '@/services/auth.server';
 import { redirect } from '@remix-run/cloudflare';
 
-export const loader: LoaderFunction = () => redirect('/login');
+export function loader() {
+  redirect('/login');
+}
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const authenticator = getAuthenticator(context.cloudflare.env);

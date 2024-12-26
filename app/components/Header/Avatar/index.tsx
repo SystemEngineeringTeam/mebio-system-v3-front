@@ -11,7 +11,7 @@ const PopoverContentStyled = styled(PopoverContent, {
   'padding': '10px',
   'width': '150px',
   'backgroundColor': 'var(--background-color)',
-  'boxShadow': 'var(--shadow-color)',
+  'boxShadow': 'var(--shadow)',
   'animationDuration': '400ms',
   'animationTimingFunction': 'cubic-bezier(0.16, 1, 0.3, 1)',
   'willChange': 'transform, opacity',
