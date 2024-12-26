@@ -44,7 +44,7 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
   if (user === null && url.pathname !== '/login') {
     return redirect('/login');
   } else if (user === null) {
-    throw new Response(null, { status: 404 });
+    return null;
   }
 
   const status: MemberStatus = {
