@@ -1,9 +1,9 @@
-import { authUserContext } from '@/components/AuthtContext';
+import type { AuthUser } from '@/services/auth.server';
+import type { MemberStatus } from '@/types/member';
 import { Text } from '@/components/basic';
 import * as RadixAvator from '@radix-ui/react-avatar';
 import { Content as PopoverContent, Portal as PopoverPortal, Root as PopoverRoot, Trigger as PopoverTrigger } from '@radix-ui/react-popover';
 import { Form } from '@remix-run/react';
-import { useContext } from 'react';
 import { styled } from 'restyle';
 
 const PopoverContentStyled = styled(PopoverContent, {
@@ -77,44 +77,42 @@ const CutomButton = styled('button', {
   },
 });
 
-export default function Avatar() {
-  const user = useContext(authUserContext);
+interface Props {
+  user: AuthUser & MemberStatus;
+}
 
+export default function Avatar({ user }: Props) {
   return (
-    <>
-      {user !== null
-      && (
-        <PopoverRoot>
-          <PopoverTrigger asChild>
-            <MenuItems>
-              <AvatarRootStyled>
-                <AvatarImageStyled src={user?.iconUrl} />
-                <AvatarFallbackStyled delayMs={600}>
-                  {user?.name.charAt(0)}
-                </AvatarFallbackStyled>
-              </AvatarRootStyled>
+    <PopoverRoot>
+      <PopoverTrigger asChild>
+        <MenuItems>
+          <AvatarRootStyled>
+            <AvatarImageStyled src={user?.iconUrl} />
+            <AvatarFallbackStyled delayMs={600}>
+              {user?.name.charAt(0)}
+            </AvatarFallbackStyled>
+          </AvatarRootStyled>
 
-              <Text color="on-primary">{user?.name}</Text>
-            </MenuItems>
-          </PopoverTrigger>
+          <Text color="on-primary">{user?.name}</Text>
+        </MenuItems>
+      </PopoverTrigger>
 
-          <PopoverPortal>
-            <PopoverContentStyled sideOffset={10}>
-              <Form action="/member" method="get">
-                <CutomButton type="submit">
-                  <Text color="text" size="md">My Page</Text>
-                </CutomButton>
-              </Form>
+      <PopoverPortal>
+        <PopoverContentStyled sideOffset={10}>
+          <Form action="/member" method="get">
+            <CutomButton type="submit">
+              <Text color="text" size="md">My Page</Text>
+            </CutomButton>
+          </Form>
 
-              <Form action="/logout" method="post">
-                <CutomButton type="submit">
-                  <Text color="text" size="md">Logout</Text>
-                </CutomButton>
-              </Form>
-            </PopoverContentStyled>
-          </PopoverPortal>
-        </PopoverRoot>
-      )}
-    </>
+          <Form action="/logout" method="post">
+            <CutomButton type="submit">
+              <Text color="text" size="md">Logout</Text>
+            </CutomButton>
+          </Form>
+        </PopoverContentStyled>
+      </PopoverPortal>
+    </PopoverRoot>
+
   );
 }

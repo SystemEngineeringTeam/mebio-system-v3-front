@@ -31,6 +31,7 @@ export default function GlobalStyles() {
           '--radius-lg': '16px',
 
           '--header-height': '50px',
+          '--footer-height': '35px',
 
           '--shadow': 'hsl(206 22% 7% / 35%) 0px 10px 38px -10px, hsl(206 22% 7% / 20%) 0px 10px 20px -15px',
         },
@@ -38,10 +39,10 @@ export default function GlobalStyles() {
           height: 'var(--header-height)',
         },
         'main': {
-          minHeight: 'calc(100vh - var(--header-height))',
+          minHeight: 'calc(100vh - var(--header-height) - var(--footer-height))',
         },
         'main:has([data-scrollable="false"])': {
-          height: 'calc(100vh - var(--header-height))',
+          height: 'calc(100vh - var(--header-height) - var(--footer-height))',
         },
       }}
     </RestyleGlobalStyles>

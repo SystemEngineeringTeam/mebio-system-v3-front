@@ -1,4 +1,6 @@
+import authUserContext from '@/components/AuthtContext';
 import { Link } from '@remix-run/react';
+import { useContext } from 'react';
 import { styled } from 'restyle';
 import Avatar from './Avatar';
 
@@ -24,16 +26,26 @@ const Title = styled(Link, {
 const Menu = styled('div', {
   display: 'flex',
   alignItems: 'center',
-  gap: '10px',
+  gap: '30px',
+});
+
+const LinkStyled = styled(Link, {
+  color: 'var(--background-color)',
+  textDecoration: 'none',
+  fontSize: 'var(--fontsize-md)',
+  cursor: 'pointer',
 });
 
 export default function Header() {
+  const user = useContext(authUserContext);
+
   return (
     <HeaderStyled>
       <Title to="/">名簿システム</Title>
 
       <Menu>
-        <Avatar />
+        {user?.isAdmin === true && <LinkStyled to="/admin">管理者</LinkStyled>}
+        {user !== null && <Avatar user={user} />}
       </Menu>
     </HeaderStyled>
   );

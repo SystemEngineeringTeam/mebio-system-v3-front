@@ -1,10 +1,11 @@
 import { styled } from 'restyle';
 
 const FooterStyled = styled('footer', {
-  padding: '5px',
+  height: 'var(--footer-height)',
   color: 'var(--background-color)',
   backgroundColor: 'var(--on-background-color)',
   textAlign: 'center',
+  lineHeight: 'var(--footer-height)',
 });
 
 export default function Footer() {
