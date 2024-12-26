@@ -1,4 +1,5 @@
 import { Input, Select, Text } from '@/components/basic';
+import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
 import { styled } from 'restyle';
 
@@ -15,6 +16,7 @@ interface NumberProperty {
 interface DateProperty {
   type: 'date';
   value: Date;
+  format?: string;
 }
 
 interface IconProperty {
@@ -56,6 +58,8 @@ const IconImage = styled('img', {
 export default function MemberProperty({ editable = true, disabled = false, property, value, onChange, ...rest }: Props) {
   const [v, setV] = useState<typeof value>(value);
 
+  const valueString = rest.type !== 'date' ? value.toString() : dayjs(value).format(rest.format ?? 'YYYY年M月D日');
+
   const showValueString = !(editable || (!editable && rest.type === 'icon'));
   const showInput = editable && rest.type !== 'select';
   const showSelect = editable && rest.type === 'select';
@@ -80,7 +84,7 @@ export default function MemberProperty({ editable = true, disabled = false, prop
       <Text align="center" bold size="lg">{property}</Text>
 
       <ValueBox>
-        {showValueString && <Text size="lg">{value.toString()}</Text>}
+        {showValueString && <Text size="lg">{valueString}</Text>}
         {showInput && <Input disabled={disabled} onChange={inputHandle} value={v.toString()} />}
         {showSelect && <Select disabled={disabled} onChange={selectHandle} options={rest.options} value={v.toString()} />}
         {showIcon && <IconImage alt="icon" src={v.toString()} />}
