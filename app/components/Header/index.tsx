@@ -2,8 +2,9 @@ import { Link } from '@remix-run/react';
 import { styled } from 'restyle';
 import Avatar from './Avatar';
 
-const HeaderBase = styled('header', {
+const HeaderStyled = styled('header', {
   padding: '0 20px',
+  backgroundColor: 'var(--on-background-color)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -11,8 +12,6 @@ const HeaderBase = styled('header', {
   top: 0,
   left: 0,
   right: 0,
-
-  backgroundColor: 'var(--on-background-color)',
 });
 
 const Title = styled(Link, {
@@ -30,12 +29,12 @@ const Menu = styled('div', {
 
 export default function Header() {
   return (
-    <HeaderBase>
+    <HeaderStyled>
       <Title to="/">名簿システム</Title>
 
       <Menu>
         <Avatar />
       </Menu>
-    </HeaderBase>
+    </HeaderStyled>
   );
 }
