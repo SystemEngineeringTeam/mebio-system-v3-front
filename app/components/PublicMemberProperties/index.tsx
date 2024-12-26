@@ -1,7 +1,6 @@
 import type { Member } from '@/types/member';
 import MemberProperty from '@/components/MemberProperty';
 import { TYPES } from '@/consts/member';
-import { toTypeName } from '@/utils';
 import { styled } from 'restyle';
 
 const SectionTitle = styled('h1', {
