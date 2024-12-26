@@ -1,3 +1,8 @@
+export const STATUS = [
+  { key: 'temporary', name: '仮登録' },
+  { key: 'approved', name: '承認済' },
+  { key: 'registered', name: '登録済' },
+] as const;
 export const TYPES = [
   { key: 'active', name: '現役生' },
   { key: 'alumni', name: '卒業生' },

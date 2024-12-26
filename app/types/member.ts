@@ -1,4 +1,4 @@
-import type { GRADES, POSITIONS } from '@/consts/member';
+import type { GRADES, POSITIONS, STATUS } from '@/consts/member';
 
 export type Grade = typeof GRADES[number];
 export type Position = typeof POSITIONS[number] | null;
@@ -6,6 +6,11 @@ export type Gender = 'male' | 'female' | 'other';
 export interface Address {
   zipCode: string;
   address: string;
+}
+
+export interface MemberStatus {
+  isAdmin: boolean;
+  status: typeof STATUS[number]['key'];
 }
 
 export interface MemberBaseInfo {
@@ -62,7 +67,7 @@ export interface MemberPrivateInfo {
 }
 
 // 全情報
-export type Member = MemberPublicInfo & MemberPrivateInfo;
+export type Member = MemberStatus & MemberPublicInfo & MemberPrivateInfo;
 
 // 新規登録時
 export interface InsertMember {
