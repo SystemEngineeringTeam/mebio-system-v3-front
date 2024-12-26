@@ -22,7 +22,7 @@ export function getAuthenticator(env: Env) {
   authenticator = new Authenticator<AuthUser>(sessionStorage);
   authenticator.use(new Auth0Strategy(
     {
-      callbackURL: callbackURL.toString(),
+      callbackURL: env.AUTH0_CALLBACK_URL ?? callbackURL.toString(),
       clientID: env.AUTH0_CLIENT_ID,
       clientSecret: env.AUTH0_CLIENT_SECRET,
       domain: env.AUTH0_DOMAIN,
