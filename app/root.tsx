@@ -1,6 +1,7 @@
 import type { AuthUser } from '@/services/auth.server';
 import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/cloudflare';
 import AuthUserContext from '@/components/AuthtContext';
+import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import GlobalStyles from '@/GlobalStyles';
 import { getAuthenticator } from '@/services/auth.server';
@@ -60,6 +61,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <GlobalStyles />
           <Header />
           <main>{children}</main>
+          <Footer />
         </AuthUserContext>
         <ScrollRestoration />
         <Scripts />
