@@ -5,6 +5,7 @@ import MemberPage from '@/pages/MemberPage';
 import { redirect, useLoaderData, useRouteError } from '@remix-run/react';
 
 interface LoaderData {
+  isEditable: boolean;
   member: Member | MemberPublicInfo;
 }
 
@@ -44,7 +45,7 @@ export function loader({ params }: LoaderFunctionArgs): LoaderData | Response {
         parentAddress: '愛知県名古屋市中区栄1-1-1',
       },
     };
-    return { member };
+    return { isEditable: true, member };
   }
 
   if (params.uuid.length < 5) {
@@ -67,13 +68,12 @@ export function loader({ params }: LoaderFunctionArgs): LoaderData | Response {
       iconUrl: 'https://satooru.me/icon.webp',
     },
   };
-
-  return { member };
+  return { isEditable: false, member };
 }
 
 export default function Index() {
-  const { member } = useLoaderData<LoaderData>();
-  return <MemberPage member={member} />;
+  const { isEditable, member } = useLoaderData<LoaderData>();
+  return <MemberPage isEditable={isEditable} member={member} />;
 }
 
 export function ErrorBoundary() {

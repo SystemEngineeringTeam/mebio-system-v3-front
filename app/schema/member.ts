@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const zGender = z.enum(['male', 'female', 'other']);
 export const zPosition = z.enum(POSITIONS).nullable();
 
-const zKana = z.string().regex(/A[ァ-ヴー]+z/u, { message: '全角カタカナで入力してください' });
+const zKana = z.string().regex(/[ァ-ヴー]+/u, { message: '全角カタカナで入力してください' });
 const zZipCode = z.string().regex(/^\d{3}-\d{4}$/, { message: 'xxx-xxxx形式で入力してください' });
 const zExpectedGraduationYear = z.number().min(new Date().getFullYear(), { message: '今年以降の年度で入力してください' }).max(new Date().getFullYear() + 10, { message: '10年以内の年度で入力してください' });
 
@@ -86,10 +86,6 @@ export const zInsertMember = z.object({
 
 // 編集時
 export const zUpdateMember = z.object({
-  public: z.union([
-    zActiveMember.omit({ uuid: true, position: true }),
-    zAlumniMember.omit({ uuid: true }),
-    zExternalMember.omit({ uuid: true }),
-  ]),
+  public: z.union([zActiveMember, zAlumniMember, zExternalMember]),
   private: zMemberBasePrivateInfo,
 }).strict();

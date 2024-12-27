@@ -1,8 +1,10 @@
 import type { Member } from '@/types/member';
-import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/cloudflare';
 import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import MemberEditPage from '@/pages/MemberEditPage';
-import { useLoaderData, useRouteError } from '@remix-run/react';
+import { zUpdateMember } from '@/schema/member';
+import { redirect, useLoaderData, useRouteError } from '@remix-run/react';
+import destr from 'destr';
 
 interface LoaderData {
   member: Member;
@@ -38,6 +40,20 @@ export function loader({ params }: LoaderFunctionArgs) {
     },
   };
   return { member };
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  const body = await request.formData();
+  const memberRes = zUpdateMember.safeParse(destr(body.get('member')));
+
+  if (!memberRes.success) return memberRes.error;
+
+  // TODO: 更新処理 (memberRes.data) UUID や position が勝手に変更されないように注意
+
+  const url = new URL(request.url);
+  // 1つ上の階層にリダイレクト
+  url.pathname = url.pathname.replace(/\/[^/]+$/, '');
+  return redirect(url.toString());
 }
 
 export default function Index() {
