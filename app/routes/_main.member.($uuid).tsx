@@ -38,14 +38,10 @@ export function loader({ params }: LoaderFunctionArgs): LoaderData | Response {
         gender: 'male',
         phoneNumber: '090-1234-5678',
         birthday: '2005-01-05',
-        currentAddress: {
-          zipCode: '000-0000',
-          address: '愛知県名古屋市中区栄0-0-0',
-        },
-        parentAddress: {
-          zipCode: '111-1111',
-          address: '愛知県名古屋市中区栄1-1-1',
-        },
+        currentAddressZipCode: '000-0000',
+        currentAddress: '愛知県名古屋市中区栄0-0-0',
+        parentAddressZipCode: '111-1111',
+        parentAddress: '愛知県名古屋市中区栄1-1-1',
       },
     };
     return { member };

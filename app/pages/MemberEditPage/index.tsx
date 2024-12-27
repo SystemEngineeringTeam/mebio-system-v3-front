@@ -11,14 +11,17 @@ interface Props {
 
 export default function MemberEditPage({ member: initMember }: Props) {
   const { member, setPublicProperty, setPrivateProperty } = useEditMember(initMember);
+  console.log(JSON.stringify(member));
   const user = useContext(authUserContext);
 
   const disabledProperty = useMemo(() => user?.isAdmin === true ? ['uuid', 'position'] : ['uuid'], [user?.isAdmin]);
+  const publicInfo = { ...initMember.public, ...member.public };
+  const privateInfo = { ...initMember.private, ...member.private };
 
   return (
     <>
-      <PublicMemberProperties disabledProperty={disabledProperty} editable publicInfo={{ ...initMember.public, ...member.public }} setProperty={setPublicProperty} />
-      <PrivateMemberProperties editable privateInfo={{ ...initMember.private, ...member.private }} setProperty={setPrivateProperty} />
+      <PublicMemberProperties disabledProperty={disabledProperty} editable publicInfo={publicInfo} setProperty={setPublicProperty} />
+      <PrivateMemberProperties editable privateInfo={privateInfo} setProperty={setPrivateProperty} />
     </>
   );
 }

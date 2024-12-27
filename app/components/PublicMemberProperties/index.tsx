@@ -30,7 +30,7 @@ interface Props {
 
 export default function PublicMemberProperties({ publicInfo, editable, disabledProperty, setProperty }: Props) {
   const parseValue = useCallback((value: string, type: Property['type']) => {
-    if (type === 'number') return Number(value);
+    if (type === 'number') return Number.parseInt(value);
     if (type === 'date') return new Date(value);
     return value;
   }, []);
@@ -49,8 +49,8 @@ export default function PublicMemberProperties({ publicInfo, editable, disabledP
       <MemberProperty disabled={disabledProperty?.includes('uuid')} editable={editable} onChange={(v) => { set('uuid', parseValue(v, 'text')); }} property="ユーザID" type="text" value={publicInfo.uuid} />
       <MemberProperty disabled={disabledProperty?.includes('lastName')} editable={editable} onChange={(v) => { set('lastName', parseValue(v, 'text')); }} property="姓" type="text" value={publicInfo.lastName} />
       <MemberProperty disabled={disabledProperty?.includes('firstName')} editable={editable} onChange={(v) => { set('firstName', parseValue(v, 'text')); }} property="名" type="text" value={publicInfo.firstName} />
-      <MemberProperty disabled={disabledProperty?.includes('lastName')} editable={editable} onChange={(v) => { set('lastName', parseValue(v, 'text')); }} property="姓(カナ)" type="text" value={publicInfo.lastNameKana} />
-      <MemberProperty disabled={disabledProperty?.includes('firstName')} editable={editable} onChange={(v) => { set('firstName', parseValue(v, 'text')); }} property="名(カナ)" type="text" value={publicInfo.firstNameKana} />
+      <MemberProperty disabled={disabledProperty?.includes('lastName')} editable={editable} onChange={(v) => { set('lastNameKana', parseValue(v, 'text')); }} property="姓(カナ)" type="text" value={publicInfo.lastNameKana} />
+      <MemberProperty disabled={disabledProperty?.includes('firstName')} editable={editable} onChange={(v) => { set('firstNameKana', parseValue(v, 'text')); }} property="名(カナ)" type="text" value={publicInfo.firstNameKana} />
       <MemberProperty disabled={disabledProperty?.includes('slackDisplayName')} editable={editable} onChange={(v) => { set('slackDisplayName', parseValue(v, 'text')); }} property="Slack表示名" type="text" value={publicInfo.slackDisplayName} />
       <MemberProperty disabled={disabledProperty?.includes('iconUrl')} editable={editable} onChange={(v) => { set('iconUrl', parseValue(v, 'icon')); }} property="アイコン" type="icon" value={publicInfo.iconUrl} />
       <MemberProperty disabled={disabledProperty?.includes('type')} editable={editable} onChange={(v) => { set('type', TYPES.find((t) => t.name === v)?.key); }} options={TYPES} property="タイプ" type="select" value={publicInfo.type} />

@@ -3,10 +3,6 @@ import type { GRADES, POSITIONS, STATUS } from '@/consts/member';
 export type Grade = typeof GRADES[number];
 export type Position = typeof POSITIONS[number] | null;
 export type Gender = 'male' | 'female' | 'other';
-export interface Address {
-  zipCode: string;
-  address: string;
-}
 
 export interface MemberStatus {
   isAdmin: boolean;
@@ -28,8 +24,10 @@ export interface MemberBasePrivateInfo {
   birthday: string;
   phoneNumber: string;
   email: string;
-  currentAddress: Address;
-  parentAddress: Address;
+  currentAddress: string;
+  currentAddressZipCode: string;
+  parentAddress: string;
+  parentAddressZipCode: string;
 }
 
 // 現役生

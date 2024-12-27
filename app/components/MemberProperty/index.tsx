@@ -1,6 +1,6 @@
 import { Input, Select, Text } from '@/components/basic';
 import dayjs from 'dayjs';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { styled } from 'restyle';
 
 interface StringProperty {

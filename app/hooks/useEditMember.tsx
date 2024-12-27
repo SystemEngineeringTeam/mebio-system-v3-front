@@ -32,14 +32,23 @@ export default function useEditMember(init: Member | MemberPublicInfo) {
 
 function toMember(editing: EditaingMember) {
   const { public: publicInfo, private: privateInfo } = editing;
+  const baseInfo = {
+    uuid: publicInfo.uuid,
+    iconUrl: publicInfo.iconUrl,
+    firstName: publicInfo.firstName,
+    lastName: publicInfo.lastName,
+    firstNameKana: publicInfo.firstNameKana,
+    lastNameKana: publicInfo.lastNameKana,
+    slackDisplayName: publicInfo.slackDisplayName,
+    type: publicInfo.type,
+  };
 
   switch (publicInfo.type) {
     case 'active':
       return {
         private: privateInfo,
         public: {
-          uuid: publicInfo.uuid,
-          type: publicInfo.type,
+          ...baseInfo,
           studentId: publicInfo.studentId,
           grade: publicInfo.grade,
           expectedGraduationYear: publicInfo.expectedGraduationYear,
@@ -51,8 +60,7 @@ function toMember(editing: EditaingMember) {
       return {
         private: privateInfo,
         public: {
-          uuid: publicInfo.uuid,
-          type: publicInfo.type,
+          ...baseInfo,
           oldPosition: publicInfo.oldPosition,
           graduationYear: publicInfo.graduationYear,
         },
@@ -62,8 +70,7 @@ function toMember(editing: EditaingMember) {
       return {
         private: privateInfo,
         public: {
-          uuid: publicInfo.uuid,
-          type: publicInfo.type,
+          ...baseInfo,
           schoolName: publicInfo.schoolName,
           organization: publicInfo.organization,
           expectedGraduationYear: publicInfo.expectedGraduationYear,
