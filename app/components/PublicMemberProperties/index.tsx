@@ -60,7 +60,7 @@ export default function PublicMemberProperties({ publicInfo, editable, disabledP
           <>
             <MemberProperty disabled={disabledProperty?.includes('studentId')} editable={editable} onChange={(v) => { set('studentId', parseValue(v, 'text')); }} property="学籍番号" type="text" value={publicInfo.studentId} />
             <MemberProperty disabled={disabledProperty?.includes('expectedGraduationYear')} editable={editable} onChange={(v) => { set('expectedGraduationYear', parseValue(v, 'number')); }} property="卒業予定年度" type="number" value={publicInfo.expectedGraduationYear ?? Number.NaN} />
-            <MemberProperty disabled={disabledProperty?.includes('position')} editable={editable} onChange={(v) => { set('position', POSITIONS.find((p) => p === v)); }} options={POSITIONS.map((p) => ({ key: p, name: p }))} property="役職" type="select" value={publicInfo.position ?? undefined} />
+            <MemberProperty disabled={disabledProperty?.includes('position')} editable={editable} onChange={(v) => { set('position', POSITIONS.find((p) => p === v)); }} options={['-', ...POSITIONS].map((p) => ({ key: p, name: p }))} property="役職" type="select" value={publicInfo.position ?? '-'} />
           </>
         )
       }
