@@ -11,7 +11,6 @@ interface Props {
 
 export default function MemberEditPage({ member: initMember }: Props) {
   const { member, setPublicProperty, setPrivateProperty } = useEditMember(initMember);
-  console.log(JSON.stringify(member));
   const user = useContext(authUserContext);
 
   const disabledProperty = useMemo(() => user?.isAdmin === true ? ['uuid', 'position'] : ['uuid'], [user?.isAdmin]);
