@@ -26,7 +26,7 @@ export const zMemberBaseInfo = z.object({
 }).strict();
 
 // 部員の非公開情報
-export const zMemberBasePrivateInfo = zMemberBaseInfo.extend({
+export const zMemberBasePrivateInfo = z.object({
   gender: zGender,
   birthday: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, { message: 'yyyy-mm-dd形式で入力してください' }),
   phoneNumber: z.string().regex(/^\d{3,4}-\d{3,4}-\d{3,4}$/, { message: 'xxx-xxxx-xxxx形式で入力してください' }),
