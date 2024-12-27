@@ -2,6 +2,7 @@ import antfu from '@antfu/eslint-config';
 
 export default antfu({
   ignores: ['*.md', '*.json', '.github/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
+  include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx'],
   formatters: true,
   stylistic: {
     quotes: 'single',
@@ -49,6 +50,7 @@ export default antfu({
       'ts/no-empty-object-type': 'off',
       'func-style': ['error', 'declaration'],
       'no-case-declarations': 'off',
+      'regexp/no-obscure-range': ['error', { allowed: 'all' }],
     },
   },
   rules: {
