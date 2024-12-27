@@ -14,7 +14,7 @@
       "ESNext"
     ],
     "types": [
-      "@remix-run/node",
+      "@remix-run/cloudflare",
       "vite/client",
     ],
     "isolatedModules": true,
