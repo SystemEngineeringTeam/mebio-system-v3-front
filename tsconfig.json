@@ -36,11 +36,6 @@
     },
     // Vite takes care of building everything, not tsc.
     "noEmit": true,
-    "plugins": [
-      {
-        "transform": "typia/lib/transform"
-      }
-    ],
     "strictNullChecks": true
   }
 }
