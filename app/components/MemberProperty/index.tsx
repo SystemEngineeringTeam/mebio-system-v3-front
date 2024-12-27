@@ -5,37 +5,32 @@ import { styled } from 'restyle';
 
 interface StringProperty {
   type: 'text';
-  value: string;
+  value: string | undefined;
 }
 
 interface NumberProperty {
   type: 'number';
-  value: number;
+  value: number | undefined;
 }
 
 interface DateProperty {
   type: 'date';
-  value: Date;
+  value: Date | undefined;
   format?: string;
 }
 
 interface IconProperty {
   type: 'icon';
-  value: string;
+  value: string | undefined;
 }
 
 interface SelectProperty {
   type: 'select';
-  value: string;
+  value: string | undefined;
   options: ReadonlyArray<{ key: string; name: string }>;
 }
 
-type Props = {
-  editable?: boolean;
-  disabled?: boolean;
-  property: string;
-  onChange?: (value: string) => void;
-} & (StringProperty | NumberProperty | DateProperty | IconProperty | SelectProperty);
+export type Property = StringProperty | NumberProperty | DateProperty | IconProperty | SelectProperty;
 
 const SubGrid = styled('div', {
   display: 'grid',
@@ -55,18 +50,23 @@ const IconImage = styled('img', {
   height: '100px',
 });
 
-export default function MemberProperty({ editable = true, disabled = false, property, value, onChange, ...rest }: Props) {
-  const [v, setV] = useState<typeof value>(value);
+type Props = {
+  editable?: boolean;
+  disabled?: boolean;
+  property: string;
+  onChange?: (value: string) => void;
+} & Property;
 
+export default function MemberProperty({ editable = true, disabled = false, property, value, onChange, ...rest }: Props) {
   const valueString = useMemo(() => {
     if (rest.type === 'date') {
-      return dayjs(value).format(rest.format ?? 'YYYY年M月D日');
+      return dayjs(value).format(editable ? 'YYYY-MM-DD' : rest.format ?? 'YYYY年M月D日');
     } else if (rest.type === 'select') {
       return rest.options.find((option) => option.key === value)?.name ?? '';
     }
 
-    return value.toString();
-  }, [rest, value]);
+    return value?.toString() ?? '';
+  }, [editable, rest, value]);
 
   const showValueString = !editable;
   const showInput = editable && rest.type !== 'select';
@@ -74,17 +74,11 @@ export default function MemberProperty({ editable = true, disabled = false, prop
   const showIcon = rest.type === 'icon';
 
   const inputHandle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setV(e.target.value);
-    if (onChange) {
-      onChange(e.target.value);
-    }
+    if (onChange) onChange(e.target.value);
   }, [onChange]);
 
   const selectHandle = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setV(e.target.value);
-    if (onChange) {
-      onChange(e.target.value);
-    }
+    if (onChange) onChange(e.target.value);
   }, [onChange]);
 
   return (
@@ -93,9 +87,9 @@ export default function MemberProperty({ editable = true, disabled = false, prop
 
       <ValueBox>
         {showValueString && <Text height="32.5px" nowrap overflow="scroll" size="lg">{valueString}</Text>}
-        {showInput && <Input disabled={disabled} onChange={inputHandle} value={v.toString()} />}
-        {showSelect && <Select disabled={disabled} onChange={selectHandle} options={rest.options} value={v.toString()} />}
-        {showIcon && <IconImage alt="icon" src={v.toString()} />}
+        {showInput && <Input disabled={disabled} onChange={inputHandle} type={rest.type} value={valueString} />}
+        {showSelect && <Select disabled={disabled} onChange={selectHandle} options={rest.options} value={valueString} />}
+        {showIcon && <IconImage alt="icon" src={valueString} />}
       </ValueBox>
     </SubGrid>
   );

@@ -25,7 +25,7 @@ export interface MemberBaseInfo {
 
 export interface MemberBasePrivateInfo {
   gender: Gender;
-  birthday: Date;
+  birthday: string;
   phoneNumber: string;
   email: string;
   currentAddress: Address;

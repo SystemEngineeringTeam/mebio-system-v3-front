@@ -48,6 +48,7 @@ export default antfu({
       'node/prefer-global/process': 'off',
       'ts/no-empty-object-type': 'off',
       'func-style': ['error', 'declaration'],
+      'no-case-declarations': 'off',
     },
   },
   rules: {

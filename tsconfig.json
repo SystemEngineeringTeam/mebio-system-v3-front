@@ -15,7 +15,7 @@
     ],
     "types": [
       "@remix-run/cloudflare",
-      "vite/client",
+      "vite/client"
     ],
     "isolatedModules": true,
     "esModuleInterop": true,
@@ -35,6 +35,12 @@
       ]
     },
     // Vite takes care of building everything, not tsc.
-    "noEmit": true
+    "noEmit": true,
+    "plugins": [
+      {
+        "transform": "typia/lib/transform"
+      }
+    ],
+    "strictNullChecks": true
   }
 }

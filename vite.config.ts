@@ -1,4 +1,5 @@
 import { vitePlugin as remix, cloudflareDevProxyVitePlugin as remixCloudflareDevProxy } from '@remix-run/dev';
+import unpluginTypia from '@ryoppippi/unplugin-typia/vite';
 import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
@@ -15,6 +16,7 @@ export default defineConfig({
       },
     }),
     tsconfigPaths(),
+    unpluginTypia(),
   ],
   ssr: {
     noExternal: ['restyle'],
