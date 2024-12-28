@@ -1,16 +1,15 @@
+import type { Property } from '@/components/MemberProperty';
+import type { SetPrivateProperty } from '@/hooks/useEditMember';
 import type { Member } from '@/types/member';
+import { Text } from '@/components/basic';
 import MemberProperty from '@/components/MemberProperty';
 import { GENDERS } from '@/consts/member';
+import { useCallback } from 'react';
 import { styled } from 'restyle';
 
-const SectionTitle = styled('h1', {
-  textAlign: 'center',
+const SectionTitleGroup = styled('div', {
   gridColumn: '1 / -1',
-});
-
-const SectionDescription = styled('p', {
   textAlign: 'center',
-  gridColumn: '1 / -1',
 });
 
 const GridSectopm = styled('section', {
@@ -24,23 +23,37 @@ const GridSectopm = styled('section', {
 
 interface Props {
   editable: boolean;
+  disabledProperty?: string[];
   privateInfo: Member['private'];
+  setProperty?: SetPrivateProperty;
 }
 
-export default function PrivateMemberProperties({ privateInfo, editable }: Props) {
+export default function PrivateMemberProperties({ privateInfo, editable, disabledProperty, setProperty }: Props) {
+  const parseValue = useCallback((value: string, type: Property['type']) => {
+    if (type === 'number') return Number.parseInt(value);
+    if (type === 'date') return new Date(value);
+    return value;
+  }, []);
+
+  const set: SetPrivateProperty = useCallback((key, value) => {
+    if (setProperty) setProperty(key, value);
+  }, [setProperty]);
+
   return (
     <GridSectopm>
-      <SectionTitle>非公開情報</SectionTitle>
-      <SectionDescription>この情報は役員と本人のみ閲覧できます</SectionDescription>
+      <SectionTitleGroup>
+        <h1>非公開情報</h1>
+        <Text>この情報は本人と役員のみ閲覧できます</Text>
+      </SectionTitleGroup>
 
-      <MemberProperty editable={editable} property="メールアドレス" type="text" value={privateInfo.email} />
-      <MemberProperty editable={editable} property="電話番号" type="text" value={privateInfo.phoneNumber} />
-      <MemberProperty editable={editable} property="誕生日" type="date" value={privateInfo.birthday} />
-      <MemberProperty editable={editable} options={GENDERS} property="性別" type="select" value={privateInfo.gender} />
-      <MemberProperty editable={editable} property="現郵便番号" type="text" value={privateInfo.currentAddress.zipCode} />
-      <MemberProperty editable={editable} property="現住所" type="text" value={privateInfo.currentAddress.address} />
-      <MemberProperty editable={editable} property="実家郵便番号" type="text" value={privateInfo.parentAddress.zipCode} />
-      <MemberProperty editable={editable} property="実家住所" type="text" value={privateInfo.parentAddress.address} />
+      <MemberProperty disabled={disabledProperty?.includes('email')} editable={editable} onChange={(v) => { set('email', parseValue(v, 'text')); }} property="メールアドレス" type="text" value={privateInfo.email} />
+      <MemberProperty disabled={disabledProperty?.includes('phoneNumber')} editable={editable} onChange={(v) => { set('phoneNumber', parseValue(v, 'text')); }} property="電話番号" type="text" value={privateInfo.phoneNumber} />
+      <MemberProperty disabled={disabledProperty?.includes('birthday')} editable={editable} onChange={(v) => { set('birthday', parseValue(v, 'date')); }} property="誕生日" type="date" value={new Date(privateInfo.birthday)} />
+      <MemberProperty disabled={disabledProperty?.includes('gender')} editable={editable} onChange={(v) => { set('gender', parseValue(v, 'select')); }} options={GENDERS} property="性別" type="select" value={privateInfo.gender} />
+      <MemberProperty disabled={disabledProperty?.includes('currentAddressZipCode')} editable={editable} onChange={(v) => { set('currentAddressZipCode', parseValue(v, 'text')); }} property="現郵便番号" type="text" value={privateInfo.currentAddressZipCode} />
+      <MemberProperty disabled={disabledProperty?.includes('currentAddress')} editable={editable} onChange={(v) => { set('currentAddress', parseValue(v, 'text')); }} property="現住所" type="text" value={privateInfo.currentAddress} />
+      <MemberProperty disabled={disabledProperty?.includes('parentAddressZipCode')} editable={editable} onChange={(v) => { set('parentAddressZipCode', parseValue(v, 'text')); }} property="実家郵便番号" type="text" value={privateInfo.parentAddressZipCode} />
+      <MemberProperty disabled={disabledProperty?.includes('parentAddress')} editable={editable} onChange={(v) => { set('parentAddress', parseValue(v, 'text')); }} property="実家住所" type="text" value={privateInfo.parentAddress} />
     </GridSectopm>
   );
 }

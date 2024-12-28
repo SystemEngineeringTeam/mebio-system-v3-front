@@ -59,7 +59,7 @@ const CardBody = styled('div', {
 
 export default function Card({ member }: Props) {
   const title = useMemo(() => {
-    if (member.type === 'active' && member.position) {
+    if (member.type === 'active' && member.position !== null) {
       return `${member.lastName} ${member.firstName} (${member.position})`;
     }
     return `${member.lastName} ${member.firstName}`;
