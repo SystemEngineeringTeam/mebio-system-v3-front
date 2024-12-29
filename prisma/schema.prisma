@@ -1,0 +1,167 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id           String @id @unique @default(uuid(7))
+  email        String
+  username     String
+  securityRole Int
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// relations ///
+
+  MemberStatus           MemberStatus?    @relation("memberStatus")
+  MemberStatusAsModifier MemberStatus[]   @relation("memberStatusAsModifier")
+  memberBase             MemberBase?
+  memberSensitive        MemberSensitive?
+  memberActive           MemberActive?
+  memberAlumni           MemberAlumni?
+  MemberExternal         MemberExternal?
+  PaymentAsPayer         Payment[]        @relation("memberAsPayer")
+  PaymentAsPayee         Payment[]        @relation("memberAsPayee")
+  MemberInternal         MemberInternal?
+}
+
+model MemberBase {
+  memberId      String @id @unique
+  iconUrl       String
+  firstName     String
+  lastName      String
+  firstNameKana String
+  lastNameKana  String
+  role          String
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model MemberStatus {
+  memberId String @id @unique
+  status   String
+
+  /// meta ///
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  memberIdAsModifier String
+
+  /// foreign keys ///
+
+  member           Member @relation(name: "memberStatus", fields: [memberId], references: [id])
+  memberAsModifier Member @relation(name: "memberStatusAsModifier", fields: [memberIdAsModifier], references: [id])
+}
+
+model MemberSensitive {
+  memberId       String @id @unique
+  birthday       String
+  gender         String
+  phoneNumber    String
+  currentZipCode String
+  currentAddress String
+  parentsZipCode String
+  parentsAddress String
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model MemberActive {
+  memberId      String @id @unique
+  retentionBias Int    @default(0)
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model MemberInternal {
+  memberId  String @id @unique
+  studentId String
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model MemberExternal {
+  memberId     String @id @unique
+  schoolName   String
+  schoolMajor  String
+  enrollYear   Int
+  organization String
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model MemberAlumni {
+  memberId      String @id @unique
+  graduatedYear Int
+  oldRole       String
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model Payment {
+  id                    String   @id @unique @default(uuid())
+  payerId               String
+  payeeId               String
+  receivedAt            DateTime
+  hasAccountantApproved Boolean
+
+  /// meta ///
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// foreign keys ///
+
+  memberAsPayer Member @relation(name: "memberAsPayer", fields: [payerId], references: [id])
+  memberAsPayee Member @relation(name: "memberAsPayee", fields: [payeeId], references: [id])
+}

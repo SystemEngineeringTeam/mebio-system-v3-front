@@ -10,9 +10,16 @@
     "lint:check": "eslint .",
     "preview": "pnpm run build && wrangler pages dev",
     "start": "wrangler pages dev ./build/client",
-    "typegen": "wrangler types"
+    "typegen": "wrangler types",
+    "db:reset": "pnpm db:apply:migration && pnpm db:seed",
+    "db:create:migration": "pnpm wrangler d1 migrations create meibo-system-v3-db",
+    "db:apply:migration": "pnpm wrangler d1 migrations apply meibo-system-v3-db --local",
+    "db:gen:migration": "pnpm prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma --script --output",
+    "db:gen:client": "pnpm prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-d1": "^6.1.0",
+    "@prisma/client": "^6.1.0",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-popover": "^1.1.4",
@@ -22,6 +29,7 @@
     "dayjs": "^1.11.13",
     "destr": "^2.0.3",
     "isbot": "^4.1.0",
+    "prisma": "^6.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remix-auth": "^3.7.0",

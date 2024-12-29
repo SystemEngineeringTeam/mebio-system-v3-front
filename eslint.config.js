@@ -2,7 +2,7 @@ import antfu from '@antfu/eslint-config';
 
 export default antfu({
   ignores: ['*.md', '*.json', '.github/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
-  include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx'],
+  include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx', 'prisma/*.ts'],
   formatters: true,
   stylistic: {
     quotes: 'single',
