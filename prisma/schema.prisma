@@ -8,11 +8,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// see: https://sysken.esa.io/posts/2008
+
 model Member {
-  id           String @id @unique @default(uuid(7))
-  email        String
-  username     String
-  securityRole Int
+  id           String @id @unique @default(uuid(7)) // -> `Brand<"memberId", string>`
+  subject      String @unique // -> `Brand<"subject", string>`
+  email        String @unique
+  securityRole String // -> `SecurityRole`
 
   /// meta ///
 
@@ -21,57 +23,63 @@ model Member {
 
   /// relations ///
 
-  MemberStatus           MemberStatus?    @relation("memberStatus")
-  MemberStatusAsModifier MemberStatus[]   @relation("memberStatusAsModifier")
-  memberBase             MemberBase?
-  memberSensitive        MemberSensitive?
-  memberActive           MemberActive?
-  memberAlumni           MemberAlumni?
-  MemberExternal         MemberExternal?
-  PaymentAsPayer         Payment[]        @relation("memberAsPayer")
-  PaymentAsPayee         Payment[]        @relation("memberAsPayee")
-  MemberInternal         MemberInternal?
+  //// 1:1 ////
+  memberBase           MemberBase?
+  memberSensitive      MemberSensitive?
+  memberActive         MemberActive?
+  MemberActiveInternal MemberActiveInternal?
+  MemberActiveExternal MemberActiveExternal?
+  memberAlumni         MemberAlumni?
+  MemberStatus         MemberStatus?         @relation("memberStatus")
+
+  //// 1:N ////
+  memberStatusAsUpdaterToHasDeleted      MemberStatus[] @relation("memberStatusAsUpdaterToHasDeleted")
+  memberStatusAsUpdaterToLastRenewalDate MemberStatus[] @relation("memberStatusAsUpdaterToLastRenewalDate")
+  PaymentAsPayer                         Payment[]      @relation("paymentMemberAsPayer")
+  PaymentAsReceiver                      Payment[]      @relation("paymentMemberAsReceiver")
+  PaymentAsApprover                      Payment[]      @relation("paymentMemberAsApprover")
 }
 
 model MemberBase {
-  memberId      String @id @unique
-  iconUrl       String
+  memberId      String @id @unique // -> `Brand<"memberId", string>`
+  iconUrl       String // -> `URL`
   firstName     String
   lastName      String
   firstNameKana String
   lastNameKana  String
-  role          String
 
   /// meta ///
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// foreign keys ///
+  /// FK ///
 
   member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberStatus {
-  memberId String @id @unique
-  status   String
+  memberId        String   @id @unique // -> `Brand<"memberId", string>`
+  hasDeleted      Boolean  @default(false)
+  lastRenewalDate DateTime
 
   /// meta ///
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  memberIdAsModifier String
+  updatedHasDeletedAt        DateTime @updatedAt
+  updatedHasDeletedById      String // -> `Brand<"memberId", string>`
+  updatedLastRenewalDateById String // -> `Brand<"memberId", string>`
 
-  /// foreign keys ///
+  /// FK ///
 
-  member           Member @relation(name: "memberStatus", fields: [memberId], references: [id])
-  memberAsModifier Member @relation(name: "memberStatusAsModifier", fields: [memberIdAsModifier], references: [id])
+  member                   Member @relation(name: "memberStatus", fields: [memberId], references: [id])
+  updatedHasDeletedBy      Member @relation(name: "memberStatusAsUpdaterToHasDeleted", fields: [updatedHasDeletedById], references: [id])
+  updatedLastRenewalDateBy Member @relation(name: "memberStatusAsUpdaterToLastRenewalDate", fields: [updatedLastRenewalDateById], references: [id])
 }
 
 model MemberSensitive {
-  memberId       String @id @unique
+  memberId       String @id @unique // -> `Brand<"memberId", string>`
   birthday       String
-  gender         String
+  gender         String // -> `Gender`
   phoneNumber    String
   currentZipCode String
   currentAddress String
@@ -83,44 +91,44 @@ model MemberSensitive {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// foreign keys ///
+  /// FK ///
 
   member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberActive {
-  memberId      String @id @unique
-  retentionBias Int    @default(0)
+  memberId String @id @unique // -> `Brand<"memberId", string>`
+  grade    String // -> `Grade`
 
   /// meta ///
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// foreign keys ///
+  /// FK ///
 
   member Member @relation(fields: [memberId], references: [id])
 }
 
-model MemberInternal {
-  memberId  String @id @unique
-  studentId String
+model MemberActiveInternal {
+  memberId  String @id @unique // -> `Brand<"memberId", string>`
+  studentId String @unique // -> `Brand<"studentId", string>`
+  role      String // -> `Role`
 
   /// meta ///
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// foreign keys ///
+  /// FK ///
 
   member Member @relation(fields: [memberId], references: [id])
 }
 
-model MemberExternal {
-  memberId     String @id @unique
+model MemberActiveExternal {
+  memberId     String @id @unique // -> `Brand<"memberId", string>`
   schoolName   String
   schoolMajor  String
-  enrollYear   Int
   organization String
 
   /// meta ///
@@ -128,14 +136,15 @@ model MemberExternal {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// foreign keys ///
+  /// FK ///
 
   member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberAlumni {
-  memberId      String @id @unique
+  memberId      String @id @unique // -> `Brand<"memberId", string>`
   graduatedYear Int
+  // NOTE: Should NOT be narrow type in client.
   oldRole       String
 
   /// meta ///
@@ -143,25 +152,27 @@ model MemberAlumni {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// foreign keys ///
+  /// FK ///
 
   member Member @relation(fields: [memberId], references: [id])
 }
 
 model Payment {
-  id                    String   @id @unique @default(uuid())
-  payerId               String
-  payeeId               String
-  receivedAt            DateTime
-  hasAccountantApproved Boolean
+  id          String  @id @unique @default(uuid(7)) // -> `Brand<"paymentId", string>`
+  payerId     String // -> `Brand<"memberId", string>`
+  receiverId  String // -> `Brand<"memberId", string>`
+  hasApproved Boolean @default(false)
+  approverId  String? // -> `Nullable<Brand<"memberId", string>>`
 
   /// meta ///
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  receivedAt DateTime
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
 
-  /// foreign keys ///
+  /// FK ///
 
-  memberAsPayer Member @relation(name: "memberAsPayer", fields: [payerId], references: [id])
-  memberAsPayee Member @relation(name: "memberAsPayee", fields: [payeeId], references: [id])
+  memberAsPayer    Member  @relation(name: "paymentMemberAsPayer", fields: [payerId], references: [id])
+  memberAsReceiver Member  @relation(name: "paymentMemberAsReceiver", fields: [receiverId], references: [id])
+  memberAsApprover Member? @relation(name: "paymentMemberAsApprover", fields: [approverId], references: [id])
 }
