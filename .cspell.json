@@ -8,8 +8,10 @@
   "words": [
     "cloudflare",
     "datasource",
+    "neverthrow",
     "prisma",
     "sqlite",
+    "Uncapitalize",
     "uuid"
   ]
 }

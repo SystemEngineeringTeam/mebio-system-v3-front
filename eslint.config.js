@@ -36,6 +36,7 @@ export default antfu({
         {
           selector: 'variable',
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+          leadingUnderscore: 'allowSingleOrDouble',
         },
       ],
       'ts/no-floating-promises': ['error'],

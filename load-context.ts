@@ -1,7 +1,7 @@
 import type { AppLoadContext } from '@remix-run/cloudflare';
 import type { PlatformProxy } from 'wrangler';
-import { Database } from '@/services/db.server';
-import { injectPrismaClient } from './app/services/__prisma.server';
+import { injectPrismaClient } from '@/services/__prisma.server';
+import { Database } from '@/services/database.server';
 
 type Cloudflare = Omit<PlatformProxy<Env>, 'dispose'>;
 
