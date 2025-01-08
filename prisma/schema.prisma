@@ -24,17 +24,17 @@ model Member {
   /// relations ///
 
   //// 1:1 ////
-  memberBase           MemberBase?
-  memberSensitive      MemberSensitive?
-  memberActive         MemberActive?
+  MemberBase           MemberBase?
+  MemberSensitive      MemberSensitive?
+  MemberActive         MemberActive?
   MemberActiveInternal MemberActiveInternal?
   MemberActiveExternal MemberActiveExternal?
-  memberAlumni         MemberAlumni?
+  MemberAlumni         MemberAlumni?
   MemberStatus         MemberStatus?         @relation("memberStatus")
 
   //// 1:N ////
-  memberStatusAsUpdaterToHasDeleted      MemberStatus[] @relation("memberStatusAsUpdaterToHasDeleted")
-  memberStatusAsUpdaterToLastRenewalDate MemberStatus[] @relation("memberStatusAsUpdaterToLastRenewalDate")
+  MemberStatusAsUpdaterToHasDeleted      MemberStatus[] @relation("memberStatusAsUpdaterToHasDeleted")
+  MemberStatusAsUpdaterToLastRenewalDate MemberStatus[] @relation("memberStatusAsUpdaterToLastRenewalDate")
   PaymentAsPayer                         Payment[]      @relation("paymentMemberAsPayer")
   PaymentAsReceiver                      Payment[]      @relation("paymentMemberAsReceiver")
   PaymentAsApprover                      Payment[]      @relation("paymentMemberAsApprover")
@@ -55,7 +55,7 @@ model MemberBase {
 
   /// FK ///
 
-  member Member @relation(fields: [memberId], references: [id])
+  Member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberStatus {
@@ -71,9 +71,9 @@ model MemberStatus {
 
   /// FK ///
 
-  member                   Member @relation(name: "memberStatus", fields: [memberId], references: [id])
-  updatedHasDeletedBy      Member @relation(name: "memberStatusAsUpdaterToHasDeleted", fields: [updatedHasDeletedById], references: [id])
-  updatedLastRenewalDateBy Member @relation(name: "memberStatusAsUpdaterToLastRenewalDate", fields: [updatedLastRenewalDateById], references: [id])
+  Member                   Member @relation(name: "memberStatus", fields: [memberId], references: [id])
+  UpdatedHasDeletedBy      Member @relation(name: "memberStatusAsUpdaterToHasDeleted", fields: [updatedHasDeletedById], references: [id])
+  UpdatedLastRenewalDateBy Member @relation(name: "memberStatusAsUpdaterToLastRenewalDate", fields: [updatedLastRenewalDateById], references: [id])
 }
 
 model MemberSensitive {
@@ -93,7 +93,7 @@ model MemberSensitive {
 
   /// FK ///
 
-  member Member @relation(fields: [memberId], references: [id])
+  Member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberActive {
@@ -107,7 +107,7 @@ model MemberActive {
 
   /// FK ///
 
-  member Member @relation(fields: [memberId], references: [id])
+  Member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberActiveInternal {
@@ -122,7 +122,7 @@ model MemberActiveInternal {
 
   /// FK ///
 
-  member Member @relation(fields: [memberId], references: [id])
+  Member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberActiveExternal {
@@ -138,7 +138,7 @@ model MemberActiveExternal {
 
   /// FK ///
 
-  member Member @relation(fields: [memberId], references: [id])
+  Member Member @relation(fields: [memberId], references: [id])
 }
 
 model MemberAlumni {
@@ -154,7 +154,7 @@ model MemberAlumni {
 
   /// FK ///
 
-  member Member @relation(fields: [memberId], references: [id])
+  Member Member @relation(fields: [memberId], references: [id])
 }
 
 model Payment {
@@ -172,7 +172,7 @@ model Payment {
 
   /// FK ///
 
-  memberAsPayer    Member  @relation(name: "paymentMemberAsPayer", fields: [payerId], references: [id])
-  memberAsReceiver Member  @relation(name: "paymentMemberAsReceiver", fields: [receiverId], references: [id])
-  memberAsApprover Member? @relation(name: "paymentMemberAsApprover", fields: [approverId], references: [id])
+  MemberAsPayer    Member  @relation(name: "paymentMemberAsPayer", fields: [payerId], references: [id])
+  MemberAsReceiver Member  @relation(name: "paymentMemberAsReceiver", fields: [receiverId], references: [id])
+  MemberAsApprover Member? @relation(name: "paymentMemberAsApprover", fields: [approverId], references: [id])
 }

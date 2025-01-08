@@ -4,17 +4,26 @@ import type {
   ModelMetadata,
   ModelMetadataOf,
   ModelSchemaOf,
+  ModelSchemaRawOf,
 } from '@/types/model';
-import type { Brand } from '@/types/utils';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { Database } from '@/services/database.server';
-import { toUncapitalize } from '@/utils';
 
 export abstract class Model<
   Metadata extends ModelMetadata<any, 'CATCH_ALL'>,
-  Schema extends object,
+  SchemaRaw extends object,
+  Schema extends object = SchemaRaw,
+  SchemaResolved extends Schema = any,
 > {
-  public constructor(public data: Schema, protected metadata: Metadata) {}
+  public constructor(
+    protected metadata: Metadata,
+    public __raw: SchemaRaw,
+  ) { }
+
+  public abstract data: Schema;
+
+  // public resolveRelation?(): DatabaseResult<SchemaRelation>;
+  // public resolveReferenced?(): DatabaseResult<SchemaReferenced>;
 
   /**
    * {@link Database.transformError} の部分適用.
@@ -35,23 +44,31 @@ export abstract class Model<
   protected transformResult = Database.transformResult;
 
   protected static getFactories<
-    B extends Brand<string, unknown>,
     M extends AnyModel,
   >(
     client: PrismaClient,
   ) {
     return (
-      Model: new (data: ModelSchemaOf<M>) => M,
+      Model: new (__raw: any) => M,
       metadata: ModelMetadataOf<M>,
     ) => ({
-      from: (id: B): DatabaseResult<M> => {
-        const { modelName, primaryKeyName } = metadata as ModelMetadata<Prisma.ModelName, 'CATCH_ALL'>;
-        const modelNameUnCapitalize = toUncapitalize (modelName);
-
-        const result = Database.transformResult<ModelSchemaOf<M>>(
-          // @ts-expect-error: `primaryKeyName` が `any` になってしまうため, 型エラーが発生する
+      from<
+        N extends Uncapitalize<Prisma.ModelName> = ModelMetadataOf<M>['modelName'],
+        F extends ModelMetadataOf<M>['primaryKeyName'] = keyof PrismaClient[N]['fields'],
+      >(
+        searchId: M extends AnyModel ? ModelSchemaOf<M>[F] : never,
+        ...args: M extends AnyModel
+          ? Parameters<PrismaClient[N]['findFirstOrThrow']>
+          : never
+      ): DatabaseResult<M> {
+        const modelName = metadata.modelName as N;
+        const result = Database.transformResult<ModelSchemaRawOf<M>>(
+          // @ts-expect-error: `findUniqueOrThrow` の引数が解決しない……
           // eslint-disable-next-line ts/no-unsafe-argument
-          client[modelNameUnCapitalize].findUniqueOrThrow({ where: { [primaryKeyName]: id } }),
+          client[modelName].findFirstOrThrow({
+            ...args,
+            where: { [metadata.primaryKeyName]: searchId },
+          }),
         );
 
         return result

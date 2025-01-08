@@ -14,6 +14,10 @@ export function toUncapitalize<T extends string>(str: T): Uncapitalize<T> {
   return str.charAt(0).toLowerCase() + str.slice(1) as Uncapitalize<T>;
 }
 
+export function toBrand<T extends string>(str: string): Brand<T, string> {
+  return str as Brand<T, string>;
+}
+
 export function parseUuid<K extends string>(uuid: string): Result<Brand<K, string>, ZodError<string>> {
   const zUuid = string().uuid();
   const { success, data, error } = zUuid.safeParse(uuid);

@@ -1,4 +1,4 @@
-import type { DatabaseError, PrismaClientError } from '@/types/database';
+import type { DatabaseError, DatabaseErrorDetail, PrismaClientError } from '@/types/database';
 import type { ModelMetadata } from '@/types/model';
 import { clientKnownErrorCode } from '@/types/database';
 import { getEntries } from '@/utils';
@@ -45,14 +45,14 @@ export class Database {
         )
         .otherwise(
           () => ({ type: 'UNEXPECTED_ERROR' as const, _raw: new Error('Unknown error', { cause: error }) }),
-        );
+        ) satisfies DatabaseErrorDetail;
 
     const _message
       = match(detail.type)
         .with('NO_ROWS_FOUND', () => `この${metadata.displayName}は見つかりませんでした`)
         .with('ALREADY_EXISTS', () => `この${metadata.displayName}は既に存在します`)
         .with('DATA_VALIDATION_FAILED', () => `この${metadata.displayName}のデータが不正です`)
-        .otherwise(() => `${metadata.displayName}の処理中にエラーが発生しました`);
+        .otherwise(() => `${metadata.displayName}のデータの処理中にエラーが発生しました`);
 
     return {
       metadata,
@@ -61,6 +61,19 @@ export class Database {
       hint,
       ...detail,
     };
+  }
+
+  public static unwrapToResponse(error: DatabaseError): never {
+    throw new Response(
+      error.message,
+      {
+        status: match(error.type)
+          .with('NO_ROWS_FOUND', () => 404)
+          .with('ALREADY_EXISTS', () => 409)
+          .with('DATA_VALIDATION_FAILED', () => 400)
+          .otherwise(() => 500),
+      },
+    );
   }
 
   public static transformResult<S>(fn: Promise<S>): ResultAsync<S, PrismaClientError> {

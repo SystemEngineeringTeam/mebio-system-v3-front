@@ -52,6 +52,7 @@ export default antfu({
       'func-style': ['error', 'declaration'],
       'no-case-declarations': 'off',
       'regexp/no-obscure-range': ['error', { allowed: 'all' }],
+      'ts/no-redeclare': 'off',
     },
   },
   rules: {

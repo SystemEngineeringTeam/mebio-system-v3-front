@@ -141,13 +141,13 @@ CREATE UNIQUE INDEX "MemberAlumni_memberId_key" ON "MemberAlumni"("memberId");
 CREATE UNIQUE INDEX "Payment_id_key" ON "Payment"("id");
 
 -- Seed
-INSERT INTO "Member" ("id", "subject", "email", "securityRole") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'Mathematics', 'math@example.com', 'admin'),
-('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'user'),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'user');
+INSERT INTO "Member" ("id", "subject", "email", "securityRole", "updatedAt") VALUES
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'Mathematics', 'math@example.com', 'admin', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'user', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'user', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberBase
-INSERT INTO "MemberBase" ("memberId", "iconUrl", "firstName", "lastName", "firstNameKana", "lastNameKana") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'http://example.com/icon1.png', 'Taro', 'Yamada', 'タロウ', 'ヤマダ'),
-('0188c0f2-8e47-11ec-b909-0242ac120003', 'http://example.com/icon2.png', 'Hanako', 'Tanaka', 'ハナコ', 'タナカ'),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'http://example.com/icon3.png', 'Kenji', 'Suzuki', 'ケンジ', 'スズキ');
+INSERT INTO "MemberBase" ("memberId", "iconUrl", "firstName", "lastName", "firstNameKana", "lastNameKana", "updatedAt") VALUES
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'http://example.com/icon1.png', 'Taro', 'Yamada', 'タロウ', 'ヤマダ', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120003', 'http://example.com/icon2.png', 'Hanako', 'Tanaka', 'ハナコ', 'タナカ', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'http://example.com/icon3.png', 'Kenji', 'Suzuki', 'ケンジ', 'スズキ', CURRENT_TIMESTAMP);
