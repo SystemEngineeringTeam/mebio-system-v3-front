@@ -1,80 +1,35 @@
-import type { DatabaseResult } from '@/types/database';
-import type {
-  AnyModel,
-  ModelMetadata,
-  ModelMetadataOf,
-  ModelSchemaOf,
-  ModelSchemaRawOf,
-} from '@/types/model';
-import type { Prisma, PrismaClient } from '@prisma/client';
-import { Database } from '@/services/database.server';
+import type { ModelGenerator, ModelMetadata, ModeWithResolved } from '@/types/model';
+import type { Nullable } from '@/types/utils';
 
-export abstract class Model<
-  Metadata extends ModelMetadata<any, 'CATCH_ALL'>,
-  SchemaRaw extends object,
+export function createModel<
+  Metadata extends ModelMetadata<any, 'CATCH_ALL'> = any,
+  SchemaRaw extends object = any,
   Schema extends object = SchemaRaw,
-  SchemaResolved extends Schema = any,
-> {
-  public constructor(
-    protected metadata: Metadata,
-    public __raw: SchemaRaw,
-  ) { }
+  SchemaResolvedRaw extends object = any,
+  SchemaResolved extends object = SchemaResolvedRaw,
+>(
+  generator: ModelGenerator<Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>,
+) {
+  return generator;
+}
 
-  public abstract data: Schema;
+export function includeKeys2select<IncludeKey extends string>(includeKeys: IncludeKey[]): Record<IncludeKey, true> {
+  return Object.fromEntries(includeKeys.map((key) => [key, true])) as Record<IncludeKey, true>;
+}
 
-  // public resolveRelation?(): DatabaseResult<SchemaRelation>;
-  // public resolveReferenced?(): DatabaseResult<SchemaReferenced>;
-
-  /**
-   * {@link Database.transformError} の部分適用.
-   * `Model` を継承しているので, 最初の引数を省略できる.
-   */
-  protected transformError(caller: string) {
-    return (
-      ...rest: Parameters<typeof Database.transformError> extends [
-        any,
-        any,
-        ...infer R,
-      ]
-        ? R
-        : never
-    ) => Database.transformError(this.metadata, caller, ...rest);
-  }
-
-  protected transformResult = Database.transformResult;
-
-  protected static getFactories<
-    M extends AnyModel,
-  >(
-    client: PrismaClient,
-  ) {
-    return (
-      Model: new (__raw: any) => M,
-      metadata: ModelMetadataOf<M>,
-    ) => ({
-      from<
-        N extends Uncapitalize<Prisma.ModelName> = ModelMetadataOf<M>['modelName'],
-        F extends ModelMetadataOf<M>['primaryKeyName'] = keyof PrismaClient[N]['fields'],
-      >(
-        searchId: M extends AnyModel ? ModelSchemaOf<M>[F] : never,
-        ...args: M extends AnyModel
-          ? Parameters<PrismaClient[N]['findFirstOrThrow']>
-          : never
-      ): DatabaseResult<M> {
-        const modelName = metadata.modelName as N;
-        const result = Database.transformResult<ModelSchemaRawOf<M>>(
-          // @ts-expect-error: `findUniqueOrThrow` の引数が解決しない……
-          // eslint-disable-next-line ts/no-unsafe-argument
-          client[modelName].findFirstOrThrow({
-            ...args,
-            where: { [metadata.primaryKeyName]: searchId },
-          }),
-        );
-
-        return result
-          .map((data) => new Model(data))
-          .mapErr((e) => Database.transformError(metadata, 'from', e));
-      },
-    });
+export function matchWithResolved<Mode extends 'DEFAULT' | 'WITH_RESOLVED', R, D>(
+  __rawResolved: Nullable<R>,
+  transform: (resolved: R) => D,
+) {
+  if (__rawResolved != null) {
+    return {
+      rawResolved: __rawResolved,
+      dataResolved: transform(__rawResolved),
+    };
+  } else {
+    return {
+      rawResolved: null as ModeWithResolved<Mode, R>,
+      dataResolved: null as ModeWithResolved<Mode, D>,
+    };
   }
 }

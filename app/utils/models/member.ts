@@ -1,14 +1,17 @@
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata } from '@/types/model';
+import type { ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Override } from '@/types/utils';
+import type { $MemberBase } from '@/utils/models/member/base';
 import type {
   Prisma,
+  PrismaClient,
   Member as SchemaRaw,
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
-import { fromEntries, parseUuid, toBrand } from '@/utils';
-import { Model } from '@/utils/model';
-import { __MemberBase } from '@/utils/models/member-base';
+import { parseUuid, toBrand } from '@/utils';
+import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { errAsync } from 'neverthrow';
+import { z } from 'zod';
 
 /// Metadata ///
 
@@ -33,14 +36,15 @@ export const Subject = {
 /**
  * セキュリティーロール – 上に行くほど権限が強いです.
  */
-export const securityRoles = [
+export const SECURITY_ROLE = [
   'DEFAULT',
   'MEMBER',
   'READ',
   'PAYMENT_APPROVE',
   'OWNER',
 ] as const;
-type SecurityRole = ArrayElem<typeof securityRoles>;
+const zSecurityRoles = z.enum(SECURITY_ROLE);
+type SecurityRole = ArrayElem<typeof SECURITY_ROLE>;
 
 /// Model Types ///
 
@@ -56,59 +60,104 @@ type Schema = Override<
 type IncludeKey = keyof Prisma.MemberInclude;
 const includeKeys = ['MemberBase', 'MemberSensitive', 'MemberActive', 'MemberActiveInternal', 'MemberActiveExternal', 'MemberAlumni', 'MemberStatus', 'MemberStatusAsUpdaterToHasDeleted', 'MemberStatusAsUpdaterToLastRenewalDate', 'PaymentAsPayer', 'PaymentAsReceiver', 'PaymentAsApprover'] as const satisfies IncludeKey[];
 
-type SchemaResolved = Schema & {
-  MemberBase: ModelEntityOf<typeof __MemberBase>;
+interface SchemaResolvedRaw {
+  MemberBase: ModelSchemaRawOf<$MemberBase>;
 };
+
+interface SchemaResolved {
+  Base: () => ModelSchemaRawOf<$MemberBase>;
+}
 
 /// Model ///
 
-export const __Member = (
-  (client) =>
-    class Member extends Model<typeof metadata, SchemaRaw, Schema> {
-      public override data: Schema;
+export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
+  public static __prisma = client;
+  private dbError = Database.dbErrorWith(metadata);
+  private models = new Database(client).models;
 
-      public constructor(__raw: SchemaRaw) {
-        super(metadata, __raw);
+  public __raw: SchemaRaw;
+  public data: Schema;
+  public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
+  public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-        this.data = {
-          ...__raw,
-          id: MemberId.from(__raw.id)._unsafeUnwrap(),
-          subject: Subject.from(__raw.subject),
-          securityRole: __raw.securityRole as SecurityRole,
-        };
-      }
+  public constructor(__raw: SchemaRaw);
+  public constructor(__raw: SchemaRaw, __rawResolved: SchemaResolvedRaw);
 
-      public static __prisma = client;
-      public static factories = {
-        ...this.getFactories<Member>(client)(Member, metadata),
-      };
+  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+    this.__raw = __raw;
+    this.data = {
+      ...__raw,
+      id: MemberId.from(__raw.id)._unsafeUnwrap(),
+      subject: Subject.from(__raw.subject),
+      securityRole: zSecurityRoles.parse(__raw.securityRole),
+    };
 
-      public resolveRelation(): DatabaseResult<SchemaResolved> {
-        const select: Record<IncludeKey, true> = fromEntries(includeKeys.map((key) => [key, true]));
-        const result = client.member.findUniqueOrThrow(
-          {
-            where: { id: this.data.id },
-            select,
-          },
-        );
+    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
+      __rawResolved,
+      (r) => ({
+        Base: () => new this.models.MemberBase(r.MemberBase),
+      }),
+    );
 
-        return Database
-          .transformResult(result)
-          .map(
-            (data) => ({
-              ...data,
-              MemberBase: new (__MemberBase(client))(data.MemberBase!),
-            }),
-          )
-          .mapErr(this.transformError('resolveRelation'));
-      }
+    this.__rawResolved = rawResolved;
+    this.dataResolved = dataResolved;
+  }
+
+  public static into(raw: SchemaRaw): Member {
+
+  }
+
+  public static from(id: MemberId): DatabaseResult<Member> {
+    return Database.transformResult(
+      client.member.findUniqueOrThrow({
+        where: { id },
+      }),
+    )
+      .mapErr(Database.dbErrorWith(metadata).transform('from'))
+      .map((data) => new Member(data));
+  }
+
+  public static fromWithResolved(id: MemberId): DatabaseResult<Member<'WITH_RESOLVED'>> {
+    return Database.transformResult(
+      client.member.findUniqueOrThrow({
+        where: { id },
+        include: includeKeys2select(includeKeys),
+      }),
+    )
+      .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
+      .map(({ MemberBase, ...rest }) => new Member(rest, { MemberBase: MemberBase! }));
+  }
+
+  public resolveRelation(): DatabaseResult<Member<'WITH_RESOLVED'>> {
+    return Database.transformResult(
+      client.member.findUniqueOrThrow({
+        where: { id: this.data.id },
+        include: includeKeys2select(includeKeys),
+      }),
+    )
+      .mapErr(this.dbError.transform('resolveRelation'))
+      .map(({ MemberBase, ...rest }) => new Member(rest, { MemberBase: MemberBase! }));
+  }
+
+  public update(operator: Member, data: Partial<Schema>): DatabaseResult<Member> {
+    // TODO: 後で権限ロジックの外部化をする
+    if (operator.data.securityRole !== 'OWNER') {
+      return errAsync(this.dbError.create('update')({
+        type: 'PERMISSION_DENIED',
+        _raw: { operator },
+      }));
     }
 
-  ) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema>;
+    return Database.transformResult(
+      client.member.update({ data, where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('update'))
+      .map((m) => new Member(m));
+  }
 
-{
-  const Member = __Member();
-  const result = (await member);
+  public delete(_operator: Member): DatabaseResult<void> {
+    throw new Error('Method not implemented.');
+  }
+}) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-  const w = result._unsafeUnwrap().MemberBase.data.createdAt;
-}
+export type $Member<M extends ModelMode = 'DEFAULT'> = typeof __Member<M>;

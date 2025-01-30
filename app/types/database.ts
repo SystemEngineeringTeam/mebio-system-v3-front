@@ -1,4 +1,6 @@
 import type { ModelMetadata } from '@/types/model';
+import type { Nullable } from '@/types/utils';
+import type { Member } from '@/utils/models/member';
 import type { Prisma } from '@prisma/client';
 import type { ResultAsync } from 'neverthrow';
 
@@ -17,6 +19,10 @@ export type PrismaClientError =
   | Error;
 
 export type DatabaseErrorDetail =
+  | {
+    type: 'PERMISSION_DENIED';
+    _raw: { operator: Member };
+  }
   | {
     type: keyof typeof clientKnownErrorCode | 'UNKNOWN_REQUEST_ERROR';
     _raw: Prisma.PrismaClientKnownRequestError;
@@ -42,7 +48,7 @@ export type DatabaseError = {
   metadata: ModelMetadata<any>;
   caller: string;
   message: string;
-  hint?: string;
+  hint: Nullable<string>;
 } & DatabaseErrorDetail;
 
 export type DatabaseResult<S> = ResultAsync<S, DatabaseError>;
