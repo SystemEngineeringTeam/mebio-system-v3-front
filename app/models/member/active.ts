@@ -1,15 +1,19 @@
 import type { $Member } from '@/models/member';
+import type { $MemberActiveExternal } from '@/models/member/active/external';
+import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { ArrayElem, Override } from '@/types/utils';
+import type { ArrayElem, Nullable, Override } from '@/types/utils';
+import type { MemberDetailActive } from '@/utils/member';
 import type {
-  Prisma,
   PrismaClient,
   MemberActive as SchemaRaw,
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
+import { toMemberDetailActive } from '@/utils/member';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { ResultAsync } from 'neverthrow';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -36,18 +40,17 @@ type Schema = Override<
   }
 >;
 
-type IncludeKey = keyof Prisma.MemberActiveInclude;
-const includeKeys = ['Member'] as const satisfies IncludeKey[];
-
 interface SchemaResolvedRaw {
   Member: ModelSchemaRawOf<$Member>;
+  MemberActiveInternal: Nullable<ModelSchemaRawOf<$MemberActiveInternal>>;
+  MemberActiveExternal: Nullable<ModelSchemaRawOf<$MemberActiveExternal>>;
 }
 
-interface SchemaResolved {
+type SchemaResolved = {
   _parent: {
     Member: ModelEntityOf<$Member>;
   };
-}
+} & MemberDetailActive;
 
 /// Model ///
 
@@ -75,6 +78,7 @@ export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
         _parent: {
           Member: new this.models.Member(r.Member),
         },
+        ...toMemberDetailActive(client, { MemberActiveInternal: r.MemberActiveInternal, MemberActiveExternal: r.MemberActiveExternal }),
       }),
     );
 
@@ -93,14 +97,28 @@ export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<MemberActive<'WITH_RESOLVED'>> {
-    return Database.transformResult(
-      client.memberActive.findUniqueOrThrow({
-        where: { memberId: id },
-        include: includeKeys2select(includeKeys),
-      }),
-    )
+    return ResultAsync.combine([
+      Database.transformResult(
+        client.memberActive.findUniqueOrThrow({
+          where: { memberId: id },
+        }),
+      ),
+      Database.transformResult(
+        client.member.findUniqueOrThrow({
+          where: { id },
+          include: includeKeys2select(['MemberActiveInternal', 'MemberActiveExternal']),
+        }),
+      ),
+    ])
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...rest }) => new MemberActive(rest, { Member: Member! }));
+      .map(
+        (
+          [memberActive, { MemberActiveInternal, MemberActiveExternal, ...Member }],
+        ) => new MemberActive(
+          memberActive,
+          { Member, MemberActiveInternal, MemberActiveExternal },
+        ),
+      );
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {

@@ -49,7 +49,7 @@ export type ModelGenerator<
 
   __prisma: PrismaClient;
   from: (id: any) => DatabaseResult<Model<'DEFAULT', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
-  fromWithResolved: (id: any) => DatabaseResult<Model<'WITH_RESOLVED', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
+  fromWithResolved?: (id: any) => DatabaseResult<Model<'WITH_RESOLVED', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
 };
 
 export type AnyModelGenerator = ModelGenerator<any, ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;

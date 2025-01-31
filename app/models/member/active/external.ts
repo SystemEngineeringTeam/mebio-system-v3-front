@@ -40,7 +40,9 @@ interface SchemaResolvedRaw {
 }
 
 interface SchemaResolved {
-  Member: () => ModelEntityOf<$Member>;
+  _parent: {
+    Member: () => ModelEntityOf<$Member>;
+  };
 }
 
 /// Model ///
@@ -65,7 +67,9 @@ export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client:
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
-        Member: () => new this.models.Member(r.Member),
+        _parent: {
+          Member: () => new this.models.Member(r.Member),
+        },
       }),
     );
 

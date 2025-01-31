@@ -1,7 +1,7 @@
 import type { ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
 
-export function includeKeys2select<IncludeKey extends string>(includeKeys: IncludeKey[]): Record<IncludeKey, true> {
+export function includeKeys2select<IncludeKey extends string>(includeKeys: readonly IncludeKey[]): Record<IncludeKey, true> {
   return Object.fromEntries(includeKeys.map((key) => [key, true])) as Record<IncludeKey, true>;
 }
 

@@ -9,6 +9,7 @@ import type { $Payment } from '@/models/payment';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
+import type { MemberDetail } from '@/utils/member';
 import type {
   Prisma,
   PrismaClient,
@@ -16,9 +17,9 @@ import type {
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
+import { toMemberDetail } from '@/utils/member';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
 import { errAsync } from 'neverthrow';
-import { match, P } from 'ts-pattern';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -70,12 +71,12 @@ const includeKeys = ['MemberBase', 'MemberSensitive', 'MemberActive', 'MemberAct
 
 interface SchemaResolvedRaw {
   MemberBase: ModelSchemaRawOf<$MemberBase>;
+  MemberStatus: ModelSchemaRawOf<$MemberStatus>;
   MemberSensitive: ModelSchemaRawOf<$MemberSensitive>;
   MemberActive: Nullable<ModelSchemaRawOf<$MemberActive>>;
   MemberActiveInternal: Nullable<ModelSchemaRawOf<$MemberActiveInternal>>;
   MemberActiveExternal: Nullable<ModelSchemaRawOf<$MemberActiveExternal>>;
   MemberAlumni: Nullable<ModelSchemaRawOf<$MemberAlumni>>;
-  MemberStatus: ModelSchemaRawOf<$MemberStatus>;
   MemberStatusAsUpdaterToHasDeleted: Array<ModelSchemaRawOf<$MemberStatus>>;
   MemberStatusAsUpdaterToLastRenewalDate: Array<ModelSchemaRawOf<$MemberStatus>>;
   PaymentAsPayer: Array<ModelSchemaRawOf<$Payment>>;
@@ -99,26 +100,7 @@ interface SchemaResolved {
     Status: () => ModelEntityOf<$MemberStatus>;
     Base: () => ModelEntityOf<$MemberBase>;
     Sensitive: () => ModelEntityOf<$MemberSensitive>;
-    detail:
-      | {
-        type: 'ALUMNI';
-        Data: () => ModelEntityOf<$MemberAlumni>;
-      }
-      | (
-          {
-            type: 'ACTIVE';
-            Data: () => ModelEntityOf<$MemberActive>;
-          } &
-          (
-            | {
-              activeType: 'INTERNAL';
-              ActiveData: () => ModelEntityOf<$MemberActiveInternal>;
-            }
-            | {
-              activeType: 'EXTERNAL';
-              ActiveData: () => ModelEntityOf<$MemberActiveExternal>;
-            }
-      ));
+    detail: MemberDetail;
   };
 }
 
@@ -146,71 +128,26 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
-      (r) => {
-        const detail: SchemaResolved['member']['detail'] = match(r)
-          // NOTE:
-          //   `MemberAlumni` が存在する場合は, 直ちに `ALUMNI` として扱う.
-          //   ∵ 部員の卒業処理は, 現役生の情報 (`MemberActive`) を持ったまま 卒業生の情報 (`MemberAlumni`) を追加するため.
-          // see: https://aitsysken.slack.com/archives/C0867ER5WUD/p1735579525501279?thread_ts=1735573868.359969&cid=C0867ER5WUD
-          .with(
-            { MemberAlumni: P.nonNullable },
-            ({ MemberAlumni }) => ({
-              type: 'ALUMNI',
-              Data: () => new this.models.member.Alumni(MemberAlumni),
-            } as const),
-          )
-          .with(
-            { MemberActive: P.nonNullable },
-            ({ MemberActive, MemberActiveInternal, MemberActiveExternal }) => ({
-              type: 'ACTIVE',
-              Data: () => new this.models.member.Active(MemberActive),
-              ...match({ internal: MemberActiveInternal, external: MemberActiveExternal })
-                .with(
-                  { internal: P.nonNullable },
-                  ({ internal }) => ({
-                    activeType: 'INTERNAL',
-                    ActiveData: () => new this.models.member.active.Internal(internal),
-                  } as const),
-                )
-                .with(
-                  { external: P.nonNullable },
-                  ({ external }) => ({
-                    activeType: 'EXTERNAL',
-                    ActiveData: () => new this.models.member.active.External(external),
-                  } as const),
-                )
-                .otherwise(
-                  () => {
-                    throw new Error('不正なデータ: 現役生において, 内部生の情報も外部生の情報も存在しません！', { cause: { __raw, __rawResolved } });
-                  },
-                ),
-            } as const),
-          )
-          .otherwise(() => {
-            throw new Error('不正なデータ: 現役生の情報も卒業生の情報も存在しません！', { cause: { __raw, __rawResolved } });
-          });
-
-        return {
-          _referenced: {
-            paymentsAs: {
-              // `map` のコールバックを Tear-off しようとしたそこのキミ！  このコンストラクターはオーバーロードされていて複数受け入れるから無理なんだな.
-              Payer: () => r.PaymentAsPayer.map((p) => new this.models.Payment(p)),
-              Receiver: () => r.PaymentAsReceiver.map((p) => new this.models.Payment(p)),
-              Approver: () => r.PaymentAsApprover.map((p) => new this.models.Payment(p)),
-            },
-            memberStatusAsUpdaterTo: {
-              HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((m) => new this.models.member.Status(m)),
-              LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((m) => new this.models.member.Status(m)),
-            },
+      (r) => ({
+        _referenced: {
+          paymentsAs: {
+            // `map` のコールバックを Tear-off しようとしたそこのキミ！  このコンストラクターはオーバーロードされていて複数受け入れるから無理なんだな.
+            Payer: () => r.PaymentAsPayer.map((p) => new this.models.Payment(p)),
+            Receiver: () => r.PaymentAsReceiver.map((p) => new this.models.Payment(p)),
+            Approver: () => r.PaymentAsApprover.map((p) => new this.models.Payment(p)),
           },
-          member: {
-            Base: () => new this.models.member.Base(r.MemberBase),
-            Status: () => new this.models.member.Status(r.MemberStatus),
-            Sensitive: () => new this.models.member.Sensitive(r.MemberSensitive),
-            detail,
+          memberStatusAsUpdaterTo: {
+            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((m) => new this.models.member.Status(m)),
+            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((m) => new this.models.member.Status(m)),
           },
-        };
-      },
+        },
+        member: {
+          Base: () => new this.models.member.Base(r.MemberBase),
+          Status: () => new this.models.member.Status(r.MemberStatus),
+          Sensitive: () => new this.models.member.Sensitive(r.MemberSensitive),
+          detail: toMemberDetail(client, { MemberAlumni: r.MemberAlumni, MemberActive: r.MemberActive, MemberActiveExternal: r.MemberActiveExternal, MemberActiveInternal: r.MemberActiveInternal }),
+        },
+      }),
     );
 
     this.__rawResolved = rawResolved;
@@ -237,10 +174,10 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
       .map(
         (
-          { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
+          { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
         ) => new Member(
           rest,
-          { MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus: MemberStatus!, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+          { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
         ),
       );
   }

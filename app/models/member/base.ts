@@ -1,15 +1,23 @@
 import type { $Member } from '@/models/member';
+import type { $MemberActive } from '@/models/member/active';
+import type { $MemberActiveExternal } from '@/models/member/active/external';
+import type { $MemberActiveInternal } from '@/models/member/active/internal';
+import type { $MemberAlumni } from '@/models/member/alumni';
+import type { $MemberSensitive } from '@/models/member/sensitive';
+import type { $MemberStatus } from '@/models/member/status';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { Override } from '@/types/utils';
+import type { Nullable, Override } from '@/types/utils';
+import type { MemberDetail } from '@/utils/member';
 import type {
-  Prisma,
   PrismaClient,
   MemberBase as SchemaRaw,
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
+import { toMemberDetail } from '@/utils/member';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { ResultAsync } from 'neverthrow';
 
 /// Metadata ///
 
@@ -29,16 +37,24 @@ type Schema = Override<
   }
 >;
 
-type IncludeKey = keyof Prisma.MemberBaseInclude;
-const includeKeys = ['Member'] as const satisfies IncludeKey[];
-
 interface SchemaResolvedRaw {
   Member: ModelSchemaRawOf<$Member>;
+  MemberStatus: ModelSchemaRawOf<$MemberStatus>;
+  MemberSensitive: ModelSchemaRawOf<$MemberSensitive>;
+  MemberActive: Nullable<ModelSchemaRawOf<$MemberActive>>;
+  MemberActiveInternal: Nullable<ModelSchemaRawOf<$MemberActiveInternal>>;
+  MemberActiveExternal: Nullable<ModelSchemaRawOf<$MemberActiveExternal>>;
+  MemberAlumni: Nullable<ModelSchemaRawOf<$MemberAlumni>>;
 }
 
 interface SchemaResolved {
   _parent: {
     Member: () => ModelEntityOf<$Member>;
+  };
+  member: {
+    Status: () => ModelEntityOf<$MemberStatus>;
+    Sensitive: () => ModelEntityOf<$MemberSensitive>;
+    detail: MemberDetail;
   };
 }
 
@@ -69,6 +85,11 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
         _parent: {
           Member: () => new this.models.Member(r.Member),
         },
+        member: {
+          Status: () => new this.models.member.Status(r.MemberStatus),
+          Sensitive: () => new this.models.member.Sensitive(r.MemberSensitive),
+          detail: toMemberDetail(client, { MemberActive: r.MemberActive, MemberActiveInternal: r.MemberActiveInternal, MemberActiveExternal: r.MemberActiveExternal, MemberAlumni: r.MemberAlumni }),
+        },
       }),
     );
 
@@ -87,14 +108,26 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<MemberBase<'WITH_RESOLVED'>> {
-    return Database.transformResult(
-      client.memberBase.findUniqueOrThrow({
-        where: { memberId: id },
-        include: includeKeys2select(includeKeys),
-      }),
-    )
+    return ResultAsync.combine([
+      Database.transformResult(
+        client.memberBase.findUniqueOrThrow({
+          where: { memberId: id },
+        }),
+      ),
+      Database.transformResult(
+        client.member.findUniqueOrThrow({
+          where: { id },
+          include: includeKeys2select(['MemberStatus', 'MemberSensitive', 'MemberActive', 'MemberActiveInternal', 'MemberActiveExternal', 'MemberAlumni']),
+        }),
+      ),
+    ])
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...rest }) => new MemberBase(rest, { Member: Member! }));
+      .map((
+        [memberBase, { MemberStatus, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, ...Member }],
+      ) => new MemberBase(
+        memberBase,
+        { Member, MemberStatus: MemberStatus!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni },
+      ));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {
