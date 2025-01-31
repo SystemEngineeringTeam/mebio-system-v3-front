@@ -1,7 +1,7 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { Override, Prettify } from '@/types/utils';
+import type { Override } from '@/types/utils';
 import type {
   Prisma,
   PrismaClient,
@@ -45,7 +45,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __MemberActiveExternal = (<M extends ModelMode>(client: PrismaClient) => class MemberActiveExternal<Mode extends ModelMode = M> {
+export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveExternal<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -54,9 +54,6 @@ export const __MemberActiveExternal = (<M extends ModelMode>(client: PrismaClien
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
-
-  public constructor(__raw: SchemaRaw);
-  public constructor(__raw: SchemaRaw, __rawResolved: SchemaResolvedRaw);
 
   public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
     this.__raw = __raw;
@@ -76,7 +73,7 @@ export const __MemberActiveExternal = (<M extends ModelMode>(client: PrismaClien
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: MemberId): DatabaseResult<MemberActiveExternal> {
+  public static from(id: MemberId): DatabaseResult<MemberActiveExternal<'DEFAULT'>> {
     return Database.transformResult(
       client.memberActiveExternal.findUniqueOrThrow({
         where: { memberId: id },
@@ -114,17 +111,3 @@ export const __MemberActiveExternal = (<M extends ModelMode>(client: PrismaClien
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
 export type $MemberActiveExternal<M extends ModelMode = 'DEFAULT'> = typeof __MemberActiveExternal<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-{
-  const M = __MemberActiveExternal({} as any);
-  type _M = Prettify<ModelEntityOf<$MemberActiveExternal<'DEFAULT'>>>;
-  //   ^?
-  type _MR = Prettify< InstanceType<ReturnType<$MemberActiveExternal<'WITH_RESOLVED'>>>>;
-  //   ^?
-
-  const m = new M<'DEFAULT'>({} as any);
-  function a(m: _MR) {
-    const _a = m.dataResolved;
-  }
-
-  a(m);
-}

@@ -1,15 +1,15 @@
+import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Override } from '@/types/utils';
-import type { $Member } from '@/models/member';
 import type {
   Prisma,
   PrismaClient,
   MemberActive as SchemaRaw,
 } from '@prisma/client';
+import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/models/member';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -51,7 +51,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => class MemberActive<Mode extends ModelMode = M> {
+export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActive<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -61,10 +61,7 @@ export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => cl
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw);
-  public constructor(__raw: SchemaRaw, __rawResolved: SchemaResolvedRaw);
-
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  public constructor(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, SchemaResolvedRaw>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -85,7 +82,7 @@ export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => cl
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: any): DatabaseResult<MemberActive> {
+  public static from(id: MemberId): DatabaseResult<MemberActive<'DEFAULT'>> {
     return Database.transformResult(
       client.memberActive.findUniqueOrThrow({
         where: { memberId: id },
@@ -95,7 +92,7 @@ export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => cl
       .map((data) => new MemberActive(data));
   }
 
-  public static fromWithResolved(id: any): DatabaseResult<MemberActive<'WITH_RESOLVED'>> {
+  public static fromWithResolved(id: MemberId): DatabaseResult<MemberActive<'WITH_RESOLVED'>> {
     return Database.transformResult(
       client.memberActive.findUniqueOrThrow({
         where: { memberId: id },

@@ -11,8 +11,8 @@ export function matchWithResolved<Mode extends ModelMode, R, D>(
 ) {
   if (__rawResolved != null) {
     return {
-      rawResolved: __rawResolved,
-      dataResolved: transform(__rawResolved),
+      rawResolved: __rawResolved as ModeWithResolved<Mode, R>,
+      dataResolved: transform(__rawResolved) as ModeWithResolved<Mode, D>,
     };
   } else {
     return {

@@ -49,7 +49,7 @@
       "",
       "/// Model ///",
       "",
-      "export const __${1:ModelName} = (<M extends ModelMode>(client: PrismaClient) => class ${1:ModelName}<Mode extends ModelMode = M> {",
+      "export const __${1:ModelName} = (<M extends ModelMode = "DEFAULT">(client: PrismaClient) => class ${1:ModelName}<Mode extends ModelMode = M> {",
       "  public static __prisma = client;",
       "  private dbError = Database.dbErrorWith(metadata);",
       "  private models = new Database(client).models",

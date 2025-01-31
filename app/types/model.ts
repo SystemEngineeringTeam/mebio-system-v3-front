@@ -10,6 +10,10 @@ export interface ModelMetadata<
   primaryKeyName: V extends 'CATCH_ALL' ? any : keyof PrismaClient[M]['fields'];
 }
 
+export type ModelMode = 'DEFAULT' | 'WITH_RESOLVED';
+export type ModeWithDefault<Mode extends ModelMode, T> = Mode extends 'DEFAULT' ? T : never;
+export type ModeWithResolved<Mode extends ModelMode, T> = Mode extends 'WITH_RESOLVED' ? T : undefined;
+
 export interface Model<
   Mode extends ModelMode,
   _Metadata extends NoInfer<ModelMetadata<any, 'CATCH_ALL'>>,
@@ -39,21 +43,17 @@ export type ModelGenerator<
   SchemaResolvedRaw,
   SchemaResolved,
 > = (client: PrismaClient) => {
-  new(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw): Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+  new(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, any>): Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
   // static methods //
 
   __prisma: PrismaClient;
-  from: (id: any) => DatabaseResult<Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
-  fromWithResolved: (id: any) => DatabaseResult<Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
+  from: (id: any) => DatabaseResult<Model<'DEFAULT', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
+  fromWithResolved: (id: any) => DatabaseResult<Model<'WITH_RESOLVED', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
 };
 
-export type ModelMode = 'DEFAULT' | 'WITH_RESOLVED';
 export type AnyModelGenerator = ModelGenerator<any, ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
 export type AnyModel = Model<any, ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
-
-export type ModeWithDefault<Mode extends ModelMode, T> = Mode extends 'DEFAULT' ? T : never;
-export type ModeWithResolved<Mode extends ModelMode, T> = Mode extends 'WITH_RESOLVED' ? T : any;
 
 /**
  * __M = (client) => M のときの M のインスタンス

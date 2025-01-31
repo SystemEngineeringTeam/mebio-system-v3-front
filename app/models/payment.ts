@@ -1,16 +1,16 @@
+import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Brand, Nullable, Override } from '@/types/utils';
-import type { $Member } from '@/models/member';
 import type {
   Prisma,
   PrismaClient,
   Payment as SchemaRaw,
 } from '@prisma/client';
+import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/models/member';
 
 /// Metadata ///
 
@@ -58,7 +58,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __Payment = (<M extends ModelMode>(client: PrismaClient) => class Payment<Mode extends ModelMode = M> {
+export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Payment<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -67,9 +67,6 @@ export const __Payment = (<M extends ModelMode>(client: PrismaClient) => class P
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
-
-  public constructor(__raw: SchemaRaw);
-  public constructor(__raw: SchemaRaw, __rawResolved: SchemaResolvedRaw);
 
   public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
     this.__raw = __raw;
@@ -96,7 +93,7 @@ export const __Payment = (<M extends ModelMode>(client: PrismaClient) => class P
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: PaymentId): DatabaseResult<Payment> {
+  public static from(id: PaymentId): DatabaseResult<Payment<'DEFAULT'>> {
     return Database.transformResult(
       client.payment.findUniqueOrThrow({
         where: { id },

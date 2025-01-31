@@ -1,6 +1,3 @@
-import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
-import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
 import type { $MemberActive } from '@/models/member/active';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
@@ -9,6 +6,9 @@ import type { $MemberBase } from '@/models/member/base';
 import type { $MemberSensitive } from '@/models/member/sensitive';
 import type { $MemberStatus } from '@/models/member/status';
 import type { $Payment } from '@/models/payment';
+import type { DatabaseResult } from '@/types/database';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
 import type {
   Prisma,
   PrismaClient,
@@ -124,7 +124,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
+export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
@@ -135,7 +135,7 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: Mode extends 'WITH_RESOLVED' ? SchemaResolvedRaw : undefined) {
+  public constructor(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, SchemaResolvedRaw>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -217,7 +217,7 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: MemberId): DatabaseResult<Member> {
+  public static from(id: MemberId): DatabaseResult<Member<'DEFAULT'>> {
     return Database.transformResult(
       client.member.findUniqueOrThrow({
         where: { id },
@@ -266,7 +266,7 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
     );
   }
 
-  public update(operator: Member, data: Partial<Schema>): DatabaseResult<Member> {
+  public update(operator: Member<'DEFAULT'>, data: Partial<Schema>): DatabaseResult<Member> {
     // TODO: 後で権限ロジックの外部化をする
     if (operator.data.securityRole !== 'OWNER') {
       return errAsync(this.dbError.create('update')({

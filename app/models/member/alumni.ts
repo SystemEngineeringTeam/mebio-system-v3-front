@@ -1,15 +1,15 @@
+import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
-import type { $Member } from '@/models/member';
 import type {
   Prisma,
   PrismaClient,
   MemberAlumni as SchemaRaw,
 } from '@prisma/client';
+import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/models/member';
 
 /// Metadata ///
 
@@ -47,7 +47,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
+export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -56,9 +56,6 @@ export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => cl
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
-
-  public constructor(__raw: SchemaRaw);
-  public constructor(__raw: SchemaRaw, __rawResolved: SchemaResolvedRaw);
 
   public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
     this.__raw = __raw;
@@ -80,7 +77,7 @@ export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => cl
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: any): DatabaseResult<MemberAlumni> {
+  public static from(id: MemberId): DatabaseResult<MemberAlumni<'DEFAULT'>> {
     return Database.transformResult(
       client.memberAlumni.findUniqueOrThrow({
         where: { memberId: id },

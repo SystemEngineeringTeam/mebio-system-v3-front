@@ -1,15 +1,15 @@
+import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
-import type { $Member } from '@/models/member';
 import type {
   Prisma,
   PrismaClient,
   MemberStatus as SchemaRaw,
 } from '@prisma/client';
+import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/models/member';
 
 /// Metadata ///
 
@@ -55,7 +55,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __MemberStatus = (<M extends ModelMode>(client: PrismaClient) => class MemberStatus<Mode extends ModelMode = M> {
+export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberStatus<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -64,9 +64,6 @@ export const __MemberStatus = (<M extends ModelMode>(client: PrismaClient) => cl
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
-
-  public constructor(__raw: SchemaRaw);
-  public constructor(__raw: SchemaRaw, __rawResolved: SchemaResolvedRaw);
 
   public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
     this.__raw = __raw;
@@ -94,7 +91,7 @@ export const __MemberStatus = (<M extends ModelMode>(client: PrismaClient) => cl
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: any): DatabaseResult<MemberStatus> {
+  public static from(id: MemberId): DatabaseResult<MemberStatus<'DEFAULT'>> {
     return Database.transformResult(
       client.memberStatus.findUniqueOrThrow({
         where: { memberId: id },
@@ -104,7 +101,7 @@ export const __MemberStatus = (<M extends ModelMode>(client: PrismaClient) => cl
       .map((data) => new MemberStatus(data));
   }
 
-  public static fromWithResolved(id: any): DatabaseResult<MemberStatus<'WITH_RESOLVED'>> {
+  public static fromWithResolved(id: MemberId): DatabaseResult<MemberStatus<'WITH_RESOLVED'>> {
     return Database.transformResult(
       client.memberStatus.findUniqueOrThrow({
         where: { memberId: id },
@@ -126,7 +123,7 @@ export const __MemberStatus = (<M extends ModelMode>(client: PrismaClient) => cl
     throw new Error('Method not implemented.');
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberStatus> {
+  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberStatus<'DEFAULT'>> {
     throw new Error('Method not implemented.');
   }
 
