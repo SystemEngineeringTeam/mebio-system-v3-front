@@ -1,4 +1,4 @@
-import type { ModelGenerator, ModelMetadata, ModeWithResolved } from '@/types/model';
+import type { ModelGenerator, ModelMetadata, ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
 
 export function createModel<
@@ -17,7 +17,7 @@ export function includeKeys2select<IncludeKey extends string>(includeKeys: Inclu
   return Object.fromEntries(includeKeys.map((key) => [key, true])) as Record<IncludeKey, true>;
 }
 
-export function matchWithResolved<Mode extends 'DEFAULT' | 'WITH_RESOLVED', R, D>(
+export function matchWithResolved<Mode extends ModelMode, R, D>(
   __rawResolved: Nullable<R>,
   transform: (resolved: R) => D,
 ) {
@@ -31,5 +31,16 @@ export function matchWithResolved<Mode extends 'DEFAULT' | 'WITH_RESOLVED', R, D
       rawResolved: null as ModeWithResolved<Mode, R>,
       dataResolved: null as ModeWithResolved<Mode, D>,
     };
+  }
+}
+
+export function matchWithDefault<Mode extends ModelMode, R, D>(
+  __rawResolved: Nullable<R>,
+  transform: (resolved: R) => D,
+) {
+  if (__rawResolved != null) {
+    return transform(__rawResolved) as ModeWithDefault<Mode, D>;
+  } else {
+    return null as ModeWithDefault<Mode, D>;
   }
 }

@@ -1,30 +1,27 @@
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { ArrayElem, Override } from '@/types/utils';
+import type { Override } from '@/types/utils';
 import type { $Member } from '@/utils/models/member';
 import type {
   Prisma,
   PrismaClient,
-  MemberActive as SchemaRaw,
+  MemberAlumni as SchemaRaw,
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
-import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
 import { MemberId } from '@/utils/models/member';
-import { z } from 'zod';
 
 /// Metadata ///
 
 const metadata = {
-  displayName: '現役部員の情報',
-  modelName: 'memberActive',
+  displayName: 'OB・OG メンバー',
+  modelName: 'memberAlumni',
   primaryKeyName: 'memberId',
-} as const satisfies ModelMetadata<'memberActive'>;
+} as const satisfies ModelMetadata<'memberAlumni'>;
 
 /// Custom Types ///
 
-export const GRADES = ['B1', 'B2', 'B3', 'B4', 'M1', 'M2', 'D1', 'D2', 'D3'] as const;
-export const zGrades = z.enum(GRADES);
-export type Grade = ArrayElem<typeof GRADES>;
+/* TODO */
 
 /// Model Types ///
 
@@ -32,11 +29,10 @@ type Schema = Override<
   SchemaRaw,
   {
     memberId: MemberId;
-    grade: Grade;
   }
 >;
 
-type IncludeKey = keyof Prisma.MemberActiveInclude;
+type IncludeKey = keyof Prisma.MemberAlumniInclude;
 const includeKeys = ['Member'] as const satisfies IncludeKey[];
 
 interface SchemaResolvedRaw {
@@ -45,13 +41,13 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: ModelEntityOf<$Member>;
+    Member: () => ModelEntityOf<$Member>;
   };
 }
 
 /// Model ///
 
-export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => class MemberActive<Mode extends ModelMode = M> {
+export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -69,14 +65,13 @@ export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => cl
     this.data = {
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
-      grade: zGrades.parse(__raw.grade),
     };
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: new this.models.Member(r.Member),
+          Member: () => new this.models.Member(r.Member),
         },
       }),
     );
@@ -85,32 +80,42 @@ export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => cl
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: any): DatabaseResult<MemberActive> {
+  public static from(id: any): DatabaseResult<MemberAlumni> {
     return Database.transformResult(
-      client.memberActive.findUniqueOrThrow({
+      client.memberAlumni.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberActive(data));
+      .map((data) => new MemberAlumni(data));
   }
 
-  public static fromWithResolved(id: any): DatabaseResult<MemberActive<'WITH_RESOLVED'>> {
+  public static fromWithResolved(id: MemberId): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
     return Database.transformResult(
-      client.memberActive.findUniqueOrThrow({
+      client.memberAlumni.findUniqueOrThrow({
         where: { memberId: id },
         include: includeKeys2select(includeKeys),
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...rest }) => new MemberActive(rest, { Member: Member! }));
+      .map((data) => new MemberAlumni(data, data));
   }
 
-  public resolveRelation(): DatabaseResult<SchemaResolved> {
-    throw new Error('Method not implemented.');
+  public resolveRelation(): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
+    return matchWithDefault(
+      this.__rawResolved,
+      () => Database.transformResult(
+        client.memberAlumni.findUniqueOrThrow({
+          where: { memberId: this.data.memberId },
+          include: includeKeys2select(includeKeys),
+        }),
+      )
+        .mapErr(this.dbError.transform('resolveRelation'))
+        .map(({ Member, ...rest }) => new MemberAlumni(rest, { Member: Member! })),
+    );
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberActive> {
+  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberAlumni> {
     throw new Error('Method not implemented.');
   }
 
@@ -119,4 +124,4 @@ export const __MemberActive = (<M extends ModelMode>(client: PrismaClient) => cl
   }
 }) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberActive<M extends ModelMode = 'DEFAULT'> = typeof __MemberActive<M>;
+export type $MemberAlumni<M extends ModelMode = 'DEFAULT'> = typeof __MemberAlumni<M>;

@@ -16,7 +16,7 @@ export interface Model<
   SchemaRaw extends object = any,
   Schema extends object = SchemaRaw,
   SchemaResolvedRaw extends object = any,
-  SchemaResolved extends object = SchemaResolvedRaw,
+  _SchemaResolved extends object = SchemaResolvedRaw,
 > {
   data: Schema;
 

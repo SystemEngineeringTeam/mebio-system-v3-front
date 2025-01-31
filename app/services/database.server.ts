@@ -3,7 +3,14 @@ import type { PartialNullable } from '@/types/utils';
 import { clientKnownErrorCode, type DatabaseError, type DatabaseErrorDetail, type PrismaClientError } from '@/types/database';
 import { getEntries } from '@/utils';
 import { __Member } from '@/utils/models/member';
+import { __MemberActive } from '@/utils/models/member/active';
+import { __MemberActiveExternal } from '@/utils/models/member/active/external';
+import { __MemberActiveInternal } from '@/utils/models/member/active/internal';
+import { __MemberAlumni } from '@/utils/models/member/alumni';
 import { __MemberBase } from '@/utils/models/member/base';
+import { __MemberSensitive } from '@/utils/models/member/sensitive';
+import { __MemberStatus } from '@/utils/models/member/status';
+import { __Payment } from '@/utils/models/payment';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { ResultAsync } from 'neverthrow';
 import { match } from 'ts-pattern';
@@ -14,7 +21,18 @@ export class Database {
   public constructor(protected client: PrismaClient) {
     this.models = {
       Member: __Member(client),
-      MemberBase: __MemberBase(client),
+      member: {
+        Status: __MemberStatus(client),
+        Base: __MemberBase(client),
+        Sensitive: __MemberSensitive(client),
+        Active: __MemberActive(client),
+        active: {
+          Internal: __MemberActiveInternal(client),
+          External: __MemberActiveExternal(client),
+        },
+        Alumni: __MemberAlumni(client),
+      },
+      Payment: __Payment(client),
     };
   }
 

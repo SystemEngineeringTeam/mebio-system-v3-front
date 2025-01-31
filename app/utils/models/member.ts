@@ -1,5 +1,5 @@
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Override } from '@/types/utils';
 import type { $MemberBase } from '@/utils/models/member/base';
 import type {
@@ -9,7 +9,7 @@ import type {
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
-import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
 import { errAsync } from 'neverthrow';
 import { z } from 'zod';
 
@@ -96,7 +96,7 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
-        Base: () => new this.models.MemberBase(r.MemberBase),
+        Base: () => new this.models.member.Base(r.MemberBase),
       }),
     );
 
@@ -125,15 +125,18 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
       .map(({ MemberBase, ...rest }) => new Member(rest, { MemberBase: MemberBase! }));
   }
 
-  public resolveRelation(): DatabaseResult<Member<'WITH_RESOLVED'>> {
-    return Database.transformResult(
-      client.member.findUniqueOrThrow({
-        where: { id: this.data.id },
-        include: includeKeys2select(includeKeys),
-      }),
-    )
-      .mapErr(this.dbError.transform('resolveRelation'))
-      .map(({ MemberBase, ...rest }) => new Member(rest, { MemberBase: MemberBase! }));
+  public resolveRelation(): ModeWithDefault<Mode, DatabaseResult<Member<'WITH_RESOLVED'>>> {
+    return matchWithDefault(
+      this.__rawResolved,
+      () => Database.transformResult(
+        client.member.findUniqueOrThrow({
+          where: { id: this.data.id },
+          include: includeKeys2select(includeKeys),
+        }),
+      )
+        .mapErr(this.dbError.transform('resolveRelation'))
+        .map(({ MemberBase, ...rest }) => new Member(rest, { MemberBase: MemberBase! })),
+    );
   }
 
   public update(operator: Member, data: Partial<Schema>): DatabaseResult<Member> {
@@ -158,12 +161,3 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
 }) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
 export type $Member<M extends ModelMode = 'DEFAULT'> = typeof __Member<M>;
-
-type A = $Member extends ModelGenerator<infer M, any, any, any, any> ? M : never;
-//   ^?
-
-{
-  const M = new (__Member({} as any))({} as any);
-  const m = (await M.resolveRelation())._unsafeUnwrap();
-  const _ = (await m.resolveRelation());
-}

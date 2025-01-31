@@ -1,6 +1,6 @@
-import type { ModelMetadata } from '@/types/model';
+import type { ModelEntityOf, ModelMetadata } from '@/types/model';
 import type { Nullable } from '@/types/utils';
-import type { Member } from '@/utils/models/member';
+import type { $Member } from '@/utils/models/member';
 import type { Prisma } from '@prisma/client';
 import type { ResultAsync } from 'neverthrow';
 
@@ -21,7 +21,7 @@ export type PrismaClientError =
 export type DatabaseErrorDetail =
   | {
     type: 'PERMISSION_DENIED';
-    _raw: { operator: Member };
+    _raw: { operator: ModelEntityOf<$Member> };
   }
   | {
     type: keyof typeof clientKnownErrorCode | 'UNKNOWN_REQUEST_ERROR';

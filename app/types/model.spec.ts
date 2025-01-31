@@ -26,9 +26,7 @@ const _metadata = {
   primaryKeyName: 'プライマリキー名',
 } as const satisfies ModelMetadata<any, 'CATCH_ALL'>;
 
-// eslint-disable-next-line func-style
-const __TestModel: ModelGenerator<typeof _metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>
-  = (_client) => null as any;
+const __TestModel = ({}) as ModelGenerator<typeof _metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
 type $TestModel = typeof __TestModel;
 
