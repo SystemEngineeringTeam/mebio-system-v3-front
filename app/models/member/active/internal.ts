@@ -1,27 +1,30 @@
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { Override } from '@/types/utils';
-import type { $Member } from '@/utils/models/member';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { ArrayElem, Override } from '@/types/utils';
+import type { $Member } from '@/models/member';
 import type {
   Prisma,
   PrismaClient,
-  MemberAlumni as SchemaRaw,
+  MemberActiveInternal as SchemaRaw,
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/utils/models/member';
+import { MemberId } from '@/models/member';
+import { z } from 'zod';
 
 /// Metadata ///
 
 const metadata = {
-  displayName: 'OB・OG メンバー',
-  modelName: 'memberAlumni',
+  displayName: '現役部員 (内部) の情報',
+  modelName: 'memberActiveInternal',
   primaryKeyName: 'memberId',
-} as const satisfies ModelMetadata<'memberAlumni'>;
+} as const satisfies ModelMetadata<'memberActiveInternal'>;
 
 /// Custom Types ///
 
-/* TODO */
+const ROLE = ['CHAIRPERSON', 'VICE_CHAIRPERSON', 'TREASURER', 'GENERAL_AFFAIRS', 'PUBLIC_RELATIONS', 'SECRETARY', 'TREASURER_ASSISTANT', 'GENERAL_AFFAIRS_ASSISTANT', 'PUBLIC_RELATIONS_ASSISTANT', 'SECRETARY_ASSISTANT'] as const;
+const zRole = z.enum(ROLE);
+type Role = ArrayElem<typeof ROLE>;
 
 /// Model Types ///
 
@@ -29,10 +32,11 @@ type Schema = Override<
   SchemaRaw,
   {
     memberId: MemberId;
+    role: Role;
   }
 >;
 
-type IncludeKey = keyof Prisma.MemberAlumniInclude;
+type IncludeKey = keyof Prisma.MemberActiveInternalInclude;
 const includeKeys = ['Member'] as const satisfies IncludeKey[];
 
 interface SchemaResolvedRaw {
@@ -47,7 +51,7 @@ interface SchemaResolved {
 
 /// Model ///
 
-export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
+export const __MemberActiveInternal = (<M extends ModelMode>(client: PrismaClient) => class MemberActiveInternal<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
@@ -65,6 +69,7 @@ export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => cl
     this.data = {
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
+      role: zRole.parse(__raw.role),
     };
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
@@ -80,48 +85,48 @@ export const __MemberAlumni = (<M extends ModelMode>(client: PrismaClient) => cl
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: any): DatabaseResult<MemberAlumni> {
+  public static from(id: MemberId): DatabaseResult<MemberActiveInternal> {
     return Database.transformResult(
-      client.memberAlumni.findUniqueOrThrow({
+      client.memberActiveInternal.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberAlumni(data));
+      .map((data) => new MemberActiveInternal(data));
   }
 
-  public static fromWithResolved(id: MemberId): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
+  public static fromWithResolved(id: MemberId): DatabaseResult<MemberActiveInternal<'WITH_RESOLVED'>> {
     return Database.transformResult(
-      client.memberAlumni.findUniqueOrThrow({
+      client.memberActiveInternal.findUniqueOrThrow({
         where: { memberId: id },
         include: includeKeys2select(includeKeys),
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map((data) => new MemberAlumni(data, data));
+      .map(({ Member, ...rest }) => new MemberActiveInternal(rest, { Member: Member! }));
   }
 
-  public resolveRelation(): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
+  public resolveRelation(): ModeWithDefault<Mode, DatabaseResult<MemberActiveInternal<'WITH_RESOLVED'>>> {
     return matchWithDefault(
       this.__rawResolved,
       () => Database.transformResult(
-        client.memberAlumni.findUniqueOrThrow({
+        client.memberActiveInternal.findUniqueOrThrow({
           where: { memberId: this.data.memberId },
           include: includeKeys2select(includeKeys),
         }),
       )
         .mapErr(this.dbError.transform('resolveRelation'))
-        .map(({ Member, ...rest }) => new MemberAlumni(rest, { Member: Member! })),
+        .map(({ Member, ...rest }) => new MemberActiveInternal(rest, { Member: Member! })),
     );
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberAlumni> {
+  public update(_operator: ModelEntityOf<ModelEntityOf<$Member>>, _data: Partial<Schema>): DatabaseResult<MemberActiveInternal> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
+  public delete(_operator: ModelEntityOf<ModelEntityOf<$Member>>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberAlumni<M extends ModelMode = 'DEFAULT'> = typeof __MemberAlumni<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $MemberActiveInternal<M extends ModelMode = 'DEFAULT'> = typeof __MemberActiveInternal<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;

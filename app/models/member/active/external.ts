@@ -1,15 +1,15 @@
+import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override, Prettify } from '@/types/utils';
-import type { $Member } from '@/utils/models/member';
 import type {
   Prisma,
   PrismaClient,
   MemberActiveExternal as SchemaRaw,
 } from '@prisma/client';
+import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/utils/models/member';
 
 /// Metadata ///
 

@@ -1,7 +1,7 @@
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Brand, Nullable, Override } from '@/types/utils';
-import type { $Member } from '@/utils/models/member';
+import type { $Member } from '@/models/member';
 import type {
   Prisma,
   PrismaClient,
@@ -10,7 +10,7 @@ import type {
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
-import { MemberId } from '@/utils/models/member';
+import { MemberId } from '@/models/member';
 
 /// Metadata ///
 

@@ -1,14 +1,14 @@
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
-import type { $MemberActive } from '@/utils/models/member/active';
-import type { $MemberActiveExternal } from '@/utils/models/member/active/external';
-import type { $MemberActiveInternal } from '@/utils/models/member/active/internal';
-import type { $MemberAlumni } from '@/utils/models/member/alumni';
-import type { $MemberBase } from '@/utils/models/member/base';
-import type { $MemberSensitive } from '@/utils/models/member/sensitive';
-import type { $MemberStatus } from '@/utils/models/member/status';
-import type { $Payment } from '@/utils/models/payment';
+import type { $MemberActive } from '@/models/member/active';
+import type { $MemberActiveExternal } from '@/models/member/active/external';
+import type { $MemberActiveInternal } from '@/models/member/active/internal';
+import type { $MemberAlumni } from '@/models/member/alumni';
+import type { $MemberBase } from '@/models/member/base';
+import type { $MemberSensitive } from '@/models/member/sensitive';
+import type { $MemberStatus } from '@/models/member/status';
+import type { $Payment } from '@/models/payment';
 import type {
   Prisma,
   PrismaClient,

@@ -1,6 +1,6 @@
 import type { ModelEntityOf, ModelMetadata } from '@/types/model';
 import type { Nullable } from '@/types/utils';
-import type { $Member } from '@/utils/models/member';
+import type { $Member } from '@/models/member';
 import type { Prisma } from '@prisma/client';
 import type { ResultAsync } from 'neverthrow';
 

@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
+import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
-import { MemberId } from '@/utils/models/member';
 import { useLoaderData } from '@remix-run/react';
 
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -23,7 +23,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     );
 
   const member = await Member
-    .factories
     // そのモデルの主キーからモデルを取得する (全モデル共通)
     .from(memberId)
     // これもエラー起きるかもなので...
@@ -39,7 +38,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   // `match` を書かなければ `member` は `Result<Member, DatabaseError>` になるので, フロント側でエラーハンドリングしても良いと思います.
   /* ちなみに, `match` が慣れなければ, if 使ってもおｋです.
 
-    const member = await Member.factories.from(memberId);
+    const member = await Member.from(memberId);
 
     if (member.isErr()) {
       throw Database.unwrapToResponse(member.error);
