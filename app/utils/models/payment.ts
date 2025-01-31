@@ -148,6 +148,6 @@ export const __Payment = (<M extends ModelMode>(client: PrismaClient) => class P
     throw new Error('Method not implemented.');
   }
 }
-) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $Payment<M extends ModelMode = 'DEFAULT'> = typeof __Payment<M>;
+export type $Payment<M extends ModelMode = 'DEFAULT'> = typeof __Payment<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;

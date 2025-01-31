@@ -1,6 +1,6 @@
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { Override } from '@/types/utils';
+import type { Override, Prettify } from '@/types/utils';
 import type { $Member } from '@/utils/models/member';
 import type {
   Prisma,
@@ -109,6 +109,22 @@ export const __MemberActiveExternal = (<M extends ModelMode>(client: PrismaClien
   public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberActiveExternal<M extends ModelMode = 'DEFAULT'> = typeof __MemberActiveExternal<M>;
+  public static hoge() { }
+}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+
+export type $MemberActiveExternal<M extends ModelMode = 'DEFAULT'> = typeof __MemberActiveExternal<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+{
+  const M = __MemberActiveExternal({} as any);
+  type _M = Prettify<ModelEntityOf<$MemberActiveExternal<'DEFAULT'>>>;
+  //   ^?
+  type _MR = Prettify< InstanceType<ReturnType<$MemberActiveExternal<'WITH_RESOLVED'>>>>;
+  //   ^?
+
+  const m = new M<'DEFAULT'>({} as any);
+  function a(m: _MR) {
+    const _a = m.dataResolved;
+  }
+
+  a(m);
+}

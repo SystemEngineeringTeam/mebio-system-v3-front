@@ -176,3 +176,10 @@ model Payment {
   MemberAsReceiver Member  @relation(name: "paymentMemberAsReceiver", fields: [receiverId], references: [id])
   MemberAsApprover Member? @relation(name: "paymentMemberAsApprover", fields: [approverId], references: [id])
 }
+
+model Snapshot {
+  id          String  @id @unique @default(uuid(7)) // -> `Brand<"snapshotId", string>`
+  description String?
+  body        String // -> `JSON` (型どうしようかな)
+  createdAt   DateTime @default(now())
+}

@@ -1,17 +1,5 @@
-import type { ModelGenerator, ModelMetadata, ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
-
-export function createModel<
-  Metadata extends ModelMetadata<any, 'CATCH_ALL'> = any,
-  SchemaRaw extends object = any,
-  Schema extends object = SchemaRaw,
-  SchemaResolvedRaw extends object = any,
-  SchemaResolved extends object = SchemaResolvedRaw,
->(
-  generator: ModelGenerator<Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>,
-) {
-  return generator;
-}
 
 export function includeKeys2select<IncludeKey extends string>(includeKeys: IncludeKey[]): Record<IncludeKey, true> {
   return Object.fromEntries(includeKeys.map((key) => [key, true])) as Record<IncludeKey, true>;

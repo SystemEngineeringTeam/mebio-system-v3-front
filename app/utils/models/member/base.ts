@@ -114,6 +114,6 @@ export const __MemberBase = (<M extends ModelMode>(client: PrismaClient) => clas
 
   public hoge() { }
 }
-) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberBase<M extends ModelMode = 'DEFAULT'> = typeof __MemberBase<M>;
+export type $MemberBase<M extends ModelMode = 'DEFAULT'> = typeof __MemberBase<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;

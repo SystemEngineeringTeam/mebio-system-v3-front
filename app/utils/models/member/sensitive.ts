@@ -116,6 +116,6 @@ export const __MemberSensitive = (<M extends ModelMode>(client: PrismaClient) =>
   public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberSensitive<M extends ModelMode = 'DEFAULT'> = typeof __MemberSensitive<M>;
+export type $MemberSensitive<M extends ModelMode = 'DEFAULT'> = typeof __MemberSensitive<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
