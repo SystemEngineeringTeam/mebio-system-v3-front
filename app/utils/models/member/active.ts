@@ -33,8 +33,6 @@ type Schema = Override<
   {
     memberId: MemberId;
     grade: Grade;
-    createdAt: Date;
-    updatedAt: Date;
   }
 >;
 
@@ -72,8 +70,6 @@ export const MemberActive = (<M extends ModelMode>(client: PrismaClient) => clas
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
       grade: zGrades.parse(__raw.grade),
-      createdAt: new Date(__raw.createdAt),
-      updatedAt: new Date(__raw.updatedAt),
     };
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(

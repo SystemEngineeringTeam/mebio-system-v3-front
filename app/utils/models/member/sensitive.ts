@@ -44,7 +44,7 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: ModelEntityOf<$Member>;
+    Member: () => ModelEntityOf<$Member>;
   };
 }
 
@@ -69,15 +69,13 @@ export const __MemberSensitive = (<M extends ModelMode>(client: PrismaClient) =>
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
       birthday: new Date(__raw.birthday),
-      createdAt: new Date(__raw.createdAt),
-      updatedAt: new Date(__raw.updatedAt),
     };
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: new this.models.Member(r.Member),
+          Member: () => new this.models.Member(r.Member),
         },
       }),
     );

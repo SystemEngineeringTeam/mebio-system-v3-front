@@ -1,9 +1,10 @@
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
-import type { $Member, __Member } from '@/utils/models/member';
+import type { $Member } from '@/utils/models/member';
 import type {
   Prisma,
+  PrismaClient,
   MemberBase as SchemaRaw,
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
@@ -25,8 +26,6 @@ type Schema = Override<
   {
     memberId: MemberId;
     iconUrl: URL;
-    createdAt: Date;
-    updatedAt: Date;
   }
 >;
 
@@ -34,19 +33,20 @@ type IncludeKey = keyof Prisma.MemberBaseInclude;
 const includeKeys = ['Member'] as const satisfies IncludeKey[];
 
 interface SchemaResolvedRaw {
-  Member: ModelSchemaRawOf<typeof __Member>;
+  Member: ModelSchemaRawOf<$Member>;
 }
 
 interface SchemaResolved {
   _parent: {
-    Member: () => ModelEntityOf<typeof __Member>;
+    Member: () => ModelEntityOf<$Member>;
   };
 }
 
 /// Model ///
 
-export const __MemberBase = ((client) => class MemberBase<Mode extends 'DEFAULT' | 'WITH_RESOLVED' = 'DEFAULT'> {
+export const __MemberBase = (<M extends ModelMode>(client: PrismaClient) => class MemberBase<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
 
@@ -64,8 +64,6 @@ export const __MemberBase = ((client) => class MemberBase<Mode extends 'DEFAULT'
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
       iconUrl: new URL(__raw.iconUrl),
-      createdAt: new Date(__raw.createdAt),
-      updatedAt: new Date(__raw.updatedAt),
     };
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
@@ -118,4 +116,4 @@ export const __MemberBase = ((client) => class MemberBase<Mode extends 'DEFAULT'
 }
 ) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberBase = typeof __MemberBase;
+export type $MemberBase<M extends ModelMode = 'DEFAULT'> = typeof __MemberBase<M>;

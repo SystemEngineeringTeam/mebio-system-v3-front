@@ -1,5 +1,5 @@
 import type { DatabaseResult } from '@/types/database';
-import type { ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Override } from '@/types/utils';
 import type { $MemberBase } from '@/utils/models/member/base';
 import type {
@@ -65,13 +65,14 @@ interface SchemaResolvedRaw {
 };
 
 interface SchemaResolved {
-  Base: () => ModelSchemaRawOf<$MemberBase>;
+  Base: () => ModelEntityOf<$MemberBase>;
 }
 
 /// Model ///
 
 export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
   private models = new Database(client).models;
 
@@ -101,10 +102,6 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
-  }
-
-  public static into(raw: SchemaRaw): Member {
-
   }
 
   public static from(id: MemberId): DatabaseResult<Member> {
@@ -161,3 +158,12 @@ export const __Member = (<M extends ModelMode>(client: PrismaClient) => class Me
 }) satisfies ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
 export type $Member<M extends ModelMode = 'DEFAULT'> = typeof __Member<M>;
+
+type A = $Member extends ModelGenerator<infer M, any, any, any, any> ? M : never;
+//   ^?
+
+{
+  const M = new (__Member({} as any))({} as any);
+  const m = (await M.resolveRelation())._unsafeUnwrap();
+  const _ = (await m.resolveRelation());
+}

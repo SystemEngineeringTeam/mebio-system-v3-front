@@ -20,7 +20,7 @@ export interface Model<
 > {
   data: Schema;
 
-  resolveRelation?: () => DatabaseResult<SchemaResolved>;
+  resolveRelation?: () => DatabaseResult<unknown>;
   update?: (...args: any[]) => DatabaseResult<AnyModel>;
   delete?: (...args: any[]) => DatabaseResult<void>;
 }
@@ -47,6 +47,8 @@ export type ModelGenerator<
 export type ModelMode = 'DEFAULT' | 'WITH_RESOLVED';
 export type AnyModelGenerator = ModelGenerator<ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
 export type AnyModel = Model<ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
+
+export type ModeWithDefault<Mode extends ModelMode, T> = Mode extends 'DEFAULT' ? T : never;
 export type ModeWithResolved<Mode extends ModelMode, T> = Mode extends 'WITH_RESOLVED' ? T : Nullable;
 
 /**

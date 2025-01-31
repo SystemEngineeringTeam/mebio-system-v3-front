@@ -29,7 +29,6 @@ type Schema = Override<
   SchemaRaw,
   {
     memberId: MemberId;
-    updatedHasDeletedAt: Date;
     updatedHasDeletedById: MemberId;
     updatedLastRenewalDateById: MemberId;
   }
@@ -74,7 +73,6 @@ export const __MemberStatus = (<M extends ModelMode>(client: PrismaClient) => cl
     this.data = {
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
-      updatedHasDeletedAt: new Date(__raw.updatedHasDeletedAt),
       updatedHasDeletedById: MemberId.from(__raw.updatedHasDeletedById)._unsafeUnwrap(),
       updatedLastRenewalDateById: MemberId.from(__raw.updatedLastRenewalDateById)._unsafeUnwrap(),
     };
