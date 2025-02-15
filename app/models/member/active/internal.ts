@@ -15,7 +15,7 @@ import { z } from 'zod';
 /// Metadata ///
 
 const metadata = {
-  displayName: '現役部員 (内部) の情報',
+  displayName: '現役生 (内部) の情報',
   modelName: 'memberActiveInternal',
   primaryKeyName: 'memberId',
 } as const satisfies ModelMetadata<'memberActiveInternal'>;

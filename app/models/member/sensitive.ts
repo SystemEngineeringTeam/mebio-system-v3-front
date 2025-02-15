@@ -1,7 +1,7 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
-import type { Override } from '@/types/utils';
+import type { ArrayElem, Override } from '@/types/utils';
 import type {
   Prisma,
   PrismaClient,
@@ -10,18 +10,21 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { z } from 'zod';
 
 /// Metadata ///
 
 const metadata = {
-  displayName: '',
+  displayName: '部員の非公開情報',
   modelName: 'memberSensitive',
   primaryKeyName: 'memberId',
 } as const satisfies ModelMetadata<'memberSensitive'>;
 
 /// Custom Types ///
 
-/* TODO */
+export const GENDER = ['male', 'female', 'other'] as const;
+const zGender = z.enum(GENDER);
+type Gender = ArrayElem<typeof GENDER>;
 
 /// Model Types ///
 
@@ -30,6 +33,7 @@ type Schema = Override<
   {
     memberId: MemberId;
     birthday: Date;
+    gender: Gender;
     createdAt: Date;
     updatedAt: Date;
   }
@@ -66,6 +70,7 @@ export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: Pris
       ...__raw,
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
       birthday: new Date(__raw.birthday),
+      gender: zGender.parse(__raw.gender),
     };
 
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(

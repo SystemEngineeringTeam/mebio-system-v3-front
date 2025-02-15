@@ -14,7 +14,7 @@ import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils
 /// Metadata ///
 
 const metadata = {
-  displayName: 'OB・OG メンバー',
+  displayName: '卒業生の情報',
   modelName: 'memberAlumni',
   primaryKeyName: 'memberId',
 } as const satisfies ModelMetadata<'memberAlumni'>;

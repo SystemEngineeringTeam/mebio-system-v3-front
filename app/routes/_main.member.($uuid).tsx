@@ -10,19 +10,19 @@ interface LoaderData {
 }
 
 export function loader({ params }: LoaderFunctionArgs): LoaderData | Response {
-  if (params.uuid === 'edit') {
+  if (params['uuid'] === 'edit') {
     const uuid = '00000000-0000-0000-0000-000000000000';
     return redirect(`/member/${uuid}/edit`, { status: 303 });
   }
 
   // TODO: 置き換える
-  if (params.uuid === undefined) {
+  if (params['uuid'] === undefined) {
     const member: Member = {
       isAdmin: false,
       status: 'registered',
       public: {
         type: 'active',
-        uuid: params.uuid ?? '00000000-0000-0000-0000-000000000000',
+        uuid: params['uuid'] ?? '00000000-0000-0000-0000-000000000000',
         firstName: '智',
         lastName: '佐藤',
         firstNameKana: 'サトル',
@@ -48,14 +48,14 @@ export function loader({ params }: LoaderFunctionArgs): LoaderData | Response {
     return { isEditable: true, member };
   }
 
-  if (params.uuid.length < 5) {
+  if (params['uuid'].length < 5) {
     throw new Response(null, { status: 404 });
   }
 
   const member: MemberPublicInfo = {
     public: {
       type: 'active',
-      uuid: params.uuid ?? '00000000-0000-0000-0000-000000000000',
+      uuid: params['uuid'] ?? '00000000-0000-0000-0000-000000000000',
       firstName: '智',
       lastName: '佐藤',
       firstNameKana: 'サトル',

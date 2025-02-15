@@ -16,7 +16,7 @@ export function loader({ params }: LoaderFunctionArgs) {
     status: 'registered',
     public: {
       type: 'active',
-      uuid: params.uuid ?? '00000000-0000-0000-0000-000000000000',
+      uuid: params['uuid'] ?? '00000000-0000-0000-0000-000000000000',
       firstName: '智',
       lastName: '佐藤',
       firstNameKana: 'サトル',

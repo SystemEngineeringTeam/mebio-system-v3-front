@@ -14,7 +14,7 @@ import { includeKeys2select, matchWithResolved } from '@/utils/model';
 /// Metadata ///
 
 const metadata = {
-  displayName: '現役部員 (外部) の情報',
+  displayName: '現役生 (外部) の情報',
   modelName: 'memberActiveExternal',
   primaryKeyName: 'memberId',
 } as const satisfies ModelMetadata<'memberActiveExternal'>;

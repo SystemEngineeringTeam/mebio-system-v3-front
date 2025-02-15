@@ -53,6 +53,10 @@ export default antfu({
       'no-case-declarations': 'off',
       'regexp/no-obscure-range': ['error', { allowed: 'all' }],
       'ts/no-redeclare': 'off',
+
+      // https://typescript-eslint.io/rules/dot-notation/
+      'dot-notation': 'off',
+      'ts/dot-notation': 'error',
     },
   },
   rules: {
