@@ -1,1 +1,1 @@
-async function main() {}
+async function _main() {}

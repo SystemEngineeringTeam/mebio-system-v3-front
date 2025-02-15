@@ -17,7 +17,6 @@ export function getSessionStorage(sessionSecret: string) {
         path: '/',
         sameSite: 'lax',
         secrets: [sessionSecret],
-        // eslint-disable-next-line dot-notation
         secure: process.env['NODE_ENV'] === 'production',
       },
     });
