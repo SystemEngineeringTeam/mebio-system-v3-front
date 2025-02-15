@@ -45,11 +45,11 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: ModelEntityOf<$Member>;
+    Member: () => ModelEntityOf<$Member>;
   };
   updaterTo: {
-    hasDeleted: ModelEntityOf<$Member>;
-    lastRenewalDate: ModelEntityOf<$Member>;
+    hasDeleted: () => ModelEntityOf<$Member>;
+    lastRenewalDate: () => ModelEntityOf<$Member>;
   };
 }
 
@@ -58,7 +58,6 @@ interface SchemaResolved {
 export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberStatus<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -74,15 +73,16 @@ export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       updatedLastRenewalDateById: MemberId.from(__raw.updatedLastRenewalDateById)._unsafeUnwrap(),
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: new this.models.Member(r.Member),
+          Member: () => new models.Member(r.Member),
         },
         updaterTo: {
-          hasDeleted: new this.models.Member(r.UpdatedHasDeletedBy),
-          lastRenewalDate: new this.models.Member(r.UpdatedLastRenewalDateBy),
+          hasDeleted: () => new models.Member(r.UpdatedHasDeletedBy),
+          lastRenewalDate: () => new models.Member(r.UpdatedLastRenewalDateBy),
         },
       }),
     );
@@ -132,4 +132,4 @@ export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberStatus<M extends ModelMode = 'DEFAULT'> = typeof __MemberStatus<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $MemberStatus<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberStatus<M>;

@@ -61,7 +61,6 @@ interface SchemaResolved {
 export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Payment<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -78,13 +77,14 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
       approverId: __raw.approverId != null ? MemberId.from(__raw.approverId)._unsafeUnwrap() : null,
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         member: {
-          Payer: () => new this.models.Member(r.Payer),
-          Receiver: () => new this.models.Member(r.Receiver),
-          Approver: () => r.Approver != null ? new this.models.Member(r.Approver) : null,
+          Payer: () => new models.Member(r.Payer),
+          Receiver: () => new models.Member(r.Receiver),
+          Approver: () => r.Approver != null ? new models.Member(r.Approver) : null,
         },
       }),
     );
@@ -147,4 +147,4 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
 }
 ) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $Payment<M extends ModelMode = 'DEFAULT'> = typeof __Payment<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $Payment<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Payment<M>;

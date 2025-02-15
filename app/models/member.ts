@@ -110,7 +110,6 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -126,25 +125,26 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
       securityRole: zSecurityRoles.parse(__raw.securityRole),
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _referenced: {
           paymentsAs: {
             // `map` のコールバックを Tear-off しようとしたそこのキミ！  このコンストラクターはオーバーロードされていて複数受け入れるから無理なんだな.
-            Payer: () => r.PaymentAsPayer.map((p) => new this.models.Payment(p)),
-            Receiver: () => r.PaymentAsReceiver.map((p) => new this.models.Payment(p)),
-            Approver: () => r.PaymentAsApprover.map((p) => new this.models.Payment(p)),
+            Payer: () => r.PaymentAsPayer.map((p) => new models.Payment(p)),
+            Receiver: () => r.PaymentAsReceiver.map((p) => new models.Payment(p)),
+            Approver: () => r.PaymentAsApprover.map((p) => new models.Payment(p)),
           },
           memberStatusAsUpdaterTo: {
-            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((m) => new this.models.member.Status(m)),
-            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((m) => new this.models.member.Status(m)),
+            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((m) => new models.member.Status(m)),
+            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((m) => new models.member.Status(m)),
           },
         },
         member: {
-          Base: () => new this.models.member.Base(r.MemberBase),
-          Status: () => new this.models.member.Status(r.MemberStatus),
-          Sensitive: () => new this.models.member.Sensitive(r.MemberSensitive),
+          Base: () => new models.member.Base(r.MemberBase),
+          Status: () => new models.member.Status(r.MemberStatus),
+          Sensitive: () => new models.member.Sensitive(r.MemberSensitive),
           detail: toMemberDetail(client, { MemberAlumni: r.MemberAlumni, MemberActive: r.MemberActive, MemberActiveExternal: r.MemberActiveExternal, MemberActiveInternal: r.MemberActiveInternal }),
         },
       }),
@@ -224,4 +224,4 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $Member<M extends ModelMode = 'DEFAULT'> = typeof __Member<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $Member<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Member<M>;

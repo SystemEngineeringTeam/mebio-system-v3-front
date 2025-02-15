@@ -45,7 +45,6 @@ interface SchemaResolved {
 export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot<_Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -80,4 +79,4 @@ export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClien
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $Snapshot<M extends ModelMode = 'DEFAULT'> = typeof __Snapshot<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $Snapshot<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Snapshot<M>;

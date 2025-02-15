@@ -123,7 +123,7 @@
       "  }",
       "}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;",
       "",
-      "export type $${1:ModelName}<M extends ModelMode = 'DEFAULT'> = typeof __${1:ModelName}<M>  & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;",
+      "export type $${1:ModelName}<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>; & typeof __${1:ModelName}<M>",
       ""
     ],
     "description": ""

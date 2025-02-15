@@ -64,7 +64,6 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -79,15 +78,16 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
       iconUrl: new URL(__raw.iconUrl),
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new this.models.Member(r.Member),
+          Member: () => new models.Member(r.Member),
         },
         member: {
-          Status: () => new this.models.member.Status(r.MemberStatus),
-          Sensitive: () => new this.models.member.Sensitive(r.MemberSensitive),
+          Status: () => new models.member.Status(r.MemberStatus),
+          Sensitive: () => new models.member.Sensitive(r.MemberSensitive),
           detail: toMemberDetail(client, { MemberActive: r.MemberActive, MemberActiveInternal: r.MemberActiveInternal, MemberActiveExternal: r.MemberActiveExternal, MemberAlumni: r.MemberAlumni }),
         },
       }),
@@ -146,4 +146,4 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
 }
 ) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberBase<M extends ModelMode = 'DEFAULT'> = typeof __MemberBase<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $MemberBase<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberBase<M>;

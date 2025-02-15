@@ -57,7 +57,6 @@ interface SchemaResolved {
 export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberSensitive<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -73,11 +72,12 @@ export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: Pris
       gender: zGender.parse(__raw.gender),
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new this.models.Member(r.Member),
+          Member: () => new models.Member(r.Member),
         },
       }),
     );
@@ -120,4 +120,4 @@ export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: Pris
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberSensitive<M extends ModelMode = 'DEFAULT'> = typeof __MemberSensitive<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $MemberSensitive<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberSensitive<M>;

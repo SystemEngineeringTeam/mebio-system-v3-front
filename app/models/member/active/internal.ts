@@ -54,7 +54,6 @@ interface SchemaResolved {
 export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveInternal<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -69,11 +68,12 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
       role: zRole.parse(__raw.role),
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new this.models.Member(r.Member),
+          Member: () => new models.Member(r.Member),
         },
       }),
     );
@@ -126,4 +126,4 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberActiveInternal<M extends ModelMode = 'DEFAULT'> = typeof __MemberActiveInternal<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $MemberActiveInternal<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberActiveInternal<M>;

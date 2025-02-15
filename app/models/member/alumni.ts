@@ -50,7 +50,6 @@ interface SchemaResolved {
 export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
-  private models = new Database(client).models;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -64,11 +63,12 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
     };
 
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new this.models.Member(r.Member),
+          Member: () => new models.Member(r.Member),
         },
       }),
     );
@@ -121,4 +121,4 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberAlumni<M extends ModelMode = 'DEFAULT'> = typeof __MemberAlumni<M> & ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+export type $MemberAlumni<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberAlumni<M>;
