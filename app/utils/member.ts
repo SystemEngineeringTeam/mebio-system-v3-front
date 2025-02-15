@@ -37,6 +37,10 @@ export function toMemberDetailActive(
   const models = new Database(client).models;
   const { MemberActiveInternal: internal, MemberActiveExternal: external } = data;
 
+  if (internal != null && external != null) {
+    throw new Error('不正なデータ: 現役生において, 内部生の情報と外部生の情報が両方存在します！', { cause: data });
+  }
+
   if (internal != null) {
     return {
       activeType: 'INTERNAL',
@@ -66,6 +70,10 @@ export function toMemberDetail(
   const models = new Database(client).models;
   const { MemberAlumni, MemberActive, MemberActiveInternal, MemberActiveExternal } = data;
 
+  if (MemberActive == null && MemberAlumni != null) {
+    throw new Error('不正なデータ: 現役生の情報が存在しないにも関わらず, 卒業生の情報が存在します！', { cause: data });
+  }
+
   // NOTE:
   //   `MemberAlumni` が存在する場合は, 直ちに `ALUMNI` として扱う.
   //   ∵ 部員の卒業処理は, 現役生の情報 (`MemberActive`) を持ったまま卒業生の情報 (`MemberAlumni`) を追加するため.
@@ -84,5 +92,6 @@ export function toMemberDetail(
       ...toMemberDetailActive(client, { MemberActiveInternal, MemberActiveExternal }),
     } as const;
   }
+
   throw new Error('不正なデータ: 現役生の情報も卒業生の情報も存在しません！', { cause: data });
 };

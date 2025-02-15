@@ -104,6 +104,14 @@ CREATE TABLE "Payment" (
     CONSTRAINT "Payment_approverId_fkey" FOREIGN KEY ("approverId") REFERENCES "Member" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
+-- CreateTable
+CREATE TABLE "Snapshot" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "description" TEXT,
+    "body" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Member_id_key" ON "Member"("id");
 
@@ -140,11 +148,14 @@ CREATE UNIQUE INDEX "MemberAlumni_memberId_key" ON "MemberAlumni"("memberId");
 -- CreateIndex
 CREATE UNIQUE INDEX "Payment_id_key" ON "Payment"("id");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Snapshot_id_key" ON "Snapshot"("id");
+
 -- Seed
 INSERT INTO "Member" ("id", "subject", "email", "securityRole", "updatedAt") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'Mathematics', 'math@example.com', 'admin', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'user', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'user', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'Mathematics', 'math@example.com', 'OWNER', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'USER', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'USER', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberBase
 INSERT INTO "MemberBase" ("memberId", "iconUrl", "firstName", "lastName", "firstNameKana", "lastNameKana", "updatedAt") VALUES

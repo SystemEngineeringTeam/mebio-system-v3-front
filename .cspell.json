@@ -10,6 +10,7 @@
     "datasource",
     "neverthrow",
     "prisma",
+    "prismock",
     "sqlite",
     "Uncapitalize",
     "uuid"
