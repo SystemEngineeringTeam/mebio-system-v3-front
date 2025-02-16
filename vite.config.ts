@@ -6,8 +6,6 @@ import { getLoadContext } from './load-context';
 export default defineConfig({
   test: {
     globals: true,
-    alias: {
-    },
   },
   plugins: [
     /*

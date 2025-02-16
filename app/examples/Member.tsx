@@ -56,7 +56,12 @@ function MemberCard(
     <div>
       {member.match(
         (m) => <MemberCardInfo data={m.data} />,
-        () => <p>部員の情報を取得できませんでした</p>,
+        (e) => (
+          <p>
+            エラー:
+            {e.message}
+          </p>
+        ),
       )}
       <button
         disabled={isPending}
