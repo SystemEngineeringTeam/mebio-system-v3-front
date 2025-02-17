@@ -43,7 +43,7 @@ export const Subject = {
 };
 
 /**
- * セキュリティーロール – 上に行くほど権限が強いです.
+ * セキュリティーロール – 下に行くほど権限が強いです.  `indexOf` で権限の強さを比較できます.
  */
 export const SECURITY_ROLE = [
   'DEFAULT',
