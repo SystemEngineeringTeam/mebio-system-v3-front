@@ -1,0 +1,1 @@
+async function _main() {}

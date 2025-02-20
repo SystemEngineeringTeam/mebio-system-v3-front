@@ -2,7 +2,7 @@ import antfu from '@antfu/eslint-config';
 
 export default antfu({
   ignores: ['*.md', '*.json', '.github/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
-  include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx'],
+  include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx', 'prisma/*.ts'],
   formatters: true,
   stylistic: {
     quotes: 'single',
@@ -36,6 +36,7 @@ export default antfu({
         {
           selector: 'variable',
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+          leadingUnderscore: 'allowSingleOrDouble',
         },
       ],
       'ts/no-floating-promises': ['error'],
@@ -51,6 +52,11 @@ export default antfu({
       'func-style': ['error', 'declaration'],
       'no-case-declarations': 'off',
       'regexp/no-obscure-range': ['error', { allowed: 'all' }],
+      'ts/no-redeclare': 'off',
+
+      // https://typescript-eslint.io/rules/dot-notation/
+      'dot-notation': 'off',
+      'ts/dot-notation': 'error',
     },
   },
   rules: {
