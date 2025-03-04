@@ -52,8 +52,8 @@ type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveExternal<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
-  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -79,8 +79,6 @@ export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client:
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
-
-    this.isSelf = builder == null;
   }
 
   public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberActiveExternal<'DEFAULT'>> {
@@ -123,15 +121,13 @@ export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client:
     throw new Error('Method not implemented.');
   }
 
-  public update( _data: Partial<Schema>): DatabaseResult<MemberActiveExternal> {
+  public update(_data: Partial<Schema>): DatabaseResult<MemberActiveExternal> {
     throw new Error('Method not implemented.');
   }
 
   public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-
-  public static hoge() { }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
 export type $MemberActiveExternal<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberActiveExternal<M>;

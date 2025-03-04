@@ -4,7 +4,6 @@ import type { $Member } from './member';
 import { Database } from '@/services/database.server';
 import { PrismockClient } from 'prismock';
 import { __Member, MemberId, Subject } from './member';
-import { safeTry } from 'neverthrow';
 
 const memberDataRaw = {
   id: '0188c0f2-8e47-11ec-b909-0242ac120002',
@@ -73,12 +72,12 @@ describe('部員モデル', () => {
   });
 
   it('リレーション済みでないモデルでリレーションを解決できるか', () => {
-    const _member = Member.__build({__raw: memberDataRaw})._unsafeUnwrap()
+    const _member = Member.__build({ __raw: memberDataRaw })._unsafeUnwrap();
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().not.toEqualTypeOf<never>();
   });
 
   it('リレーション済みのモデルでリレーションを解決できないか', () => {
-    const _member = Member.__build<'WITH_RESOLVED'>({__raw: memberDataRaw,  /* 本当は第 2 引数に ResolvedRaw が必要 */})._unsafeUnwrap();
+    const _member = Member.__build<'WITH_RESOLVED'>({ __raw: memberDataRaw /* 本当は第 2 引数に ResolvedRaw が必要 */ })._unsafeUnwrap();
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().toEqualTypeOf<never>();
   });
 });

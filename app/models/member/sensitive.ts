@@ -10,8 +10,8 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
-import { z } from 'zod';
 import { err, ok } from 'neverthrow';
+import { z } from 'zod';
 
 /// Metadata ///
 
@@ -59,8 +59,8 @@ type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberSensitive<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
-  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -88,8 +88,6 @@ export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: Pris
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
-    
-    this.isSelf = builder == null;
   }
 
   public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberSensitive<'DEFAULT'>> {
@@ -124,7 +122,7 @@ export const __MemberSensitive = (<M extends ModelMode = 'DEFAULT'>(client: Pris
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...__raw }) => new MemberSensitive({ __raw, __rawResolved: { Member }}));
+      .map(({ Member, ...__raw }) => new MemberSensitive({ __raw, __rawResolved: { Member } }));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {

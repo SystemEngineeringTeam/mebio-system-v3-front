@@ -1,3 +1,4 @@
+import type { $Member } from '@/models/member';
 import type { $MemberActive } from '@/models/member/active';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
@@ -6,7 +7,6 @@ import type { BuildModelResult, ModelEntityOf, ModelSchemaRawOf } from '@/types/
 import type { PartialNullable } from '@/types/utils';
 import type { PrismaClient } from '@prisma/client';
 import { Database } from '@/services/database.server';
-import { $Member } from '@/models/member';
 
 export type MemberDetailActive =
   | {
@@ -46,14 +46,14 @@ export function toMemberDetailActive(
   if (internal != null) {
     return {
       activeType: 'INTERNAL',
-      ActiveData: () => models.member.active.Internal.__build({__raw: internal}, builder),
+      ActiveData: () => models.member.active.Internal.__build({ __raw: internal }, builder),
     } as const;
   }
 
   if (external != null) {
     return {
       activeType: 'EXTERNAL',
-      ActiveData: () => models.member.active.External.__build({__raw: external}, builder),
+      ActiveData: () => models.member.active.External.__build({ __raw: external }, builder),
     } as const;
   }
 
@@ -84,14 +84,14 @@ export function toMemberDetail(
   if (MemberAlumni != null) {
     return {
       type: 'ALUMNI',
-      Data: () => models.member.Alumni.__build({__raw: MemberAlumni}, builder),
+      Data: () => models.member.Alumni.__build({ __raw: MemberAlumni }, builder),
     } as const;
   }
 
   if (MemberActive != null) {
     return {
       type: 'ACTIVE',
-      Data: () => models.member.Active.__build({__raw: MemberActive}, builder),
+      Data: () => models.member.Active.__build({ __raw: MemberActive }, builder),
       ...toMemberDetailActive(client, { MemberActiveInternal, MemberActiveExternal }),
     } as const;
   }

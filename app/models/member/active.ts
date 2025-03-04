@@ -58,8 +58,8 @@ type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActive<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
-    private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -87,8 +87,6 @@ export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
-    
-    this.isSelf = builder == null;
   }
 
   public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberActive<'DEFAULT'>> {
@@ -140,7 +138,7 @@ export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
               Member,
               MemberActiveInternal,
               MemberActiveExternal,
-            }
+            },
           },
         ),
       );

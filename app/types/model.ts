@@ -62,13 +62,13 @@ export type ModelGenerator<
   __prisma: PrismaClient;
 
   __build: (
-    rawData: ModelRawData4build<SchemaRaw, SchemaResolvedRaw>,
+    rawData: ModelRawData4build<Mode, SchemaRaw, SchemaResolvedRaw>,
     builder?: any // FIXME: any を `ModelEntityOf<$Member>` に縛る
   ) => BuildModelResult<Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
-  
+
   from: (
     id: any,
-    builder: any  // FIXME: any を `ModelEntityOf<$Member>` に縛る
+    builder: any // FIXME: any を `ModelEntityOf<$Member>` に縛る
   ) => DatabaseResult<BuildModelResult<Model<'DEFAULT', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>>;
   fromWithResolved?: (id: any) => DatabaseResult<Model<'WITH_RESOLVED', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
 };
@@ -87,7 +87,7 @@ export type ModelEntityOf<T>
   = T extends AnyModelGenerator
   /*
     NOTE:
-      `Model` はファクトリーパターンを採用するために, コンストラクタのアクセス修飾子を `private` した.  
+      `Model` はファクトリーパターンを採用するために, コンストラクタのアクセス修飾子を `private` した.
       そのため, `InstanceType<T>` の `T` の制約 `abstract new (...args: any) => any` を満たすための `public` なコンストラクタを失ったために
       インスタンス化後の型を推論できなくなった.  なのでワークアラウンドとして `InstanceTypeSpy` を適用した.
    */

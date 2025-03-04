@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Brand, Nullable, Override } from '@/types/utils';
 import type {
   Prisma,
@@ -11,6 +11,7 @@ import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
+import { err, ok } from 'neverthrow';
 
 /// Metadata ///
 
@@ -50,16 +51,19 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   member: {
-    Payer: () => ModelEntityOf<$Member>;
-    Receiver: () => ModelEntityOf<$Member>;
-    Approver: () => Nullable<ModelEntityOf<$Member>>;
+    Payer: () => BuildModelResult<ModelEntityOf<$Member>>;
+    Receiver: () => BuildModelResult<ModelEntityOf<$Member>>;
+    Approver: () => Nullable<BuildModelResult<ModelEntityOf<$Member>>>;
   };
 }
+
+type RawData<M extends ModelMode = "DEFAULT"> = ModelRawData4build<M, SchemaRaw, SchemaResolvedRaw>;
 
 /// Model ///
 
 export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Payment<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
 
   public __raw: SchemaRaw;
@@ -67,7 +71,7 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  private constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -82,9 +86,9 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
       __rawResolved,
       (r) => ({
         member: {
-          Payer: () => new models.Member(r.Payer),
-          Receiver: () => new models.Member(r.Receiver),
-          Approver: () => r.Approver != null ? new models.Member(r.Approver) : null,
+          Payer: () => models.Member.__build({ __raw: r.Payer }, builder),
+          Receiver: () => models.Member.__build({ __raw: r.Receiver }, builder),
+          Approver: () => r.Approver != null ? models.Member.__build({ __raw: r.Approver }) : null,
         },
       }),
     );
@@ -93,14 +97,28 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: PaymentId): DatabaseResult<Payment<'DEFAULT'>> {
+  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<Payment<'DEFAULT'>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new Payment(rawData.__raw, rawData.__rawResolved));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new Payment(rawData, builder));
+  }
+
+  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<Payment<'DEFAULT'>>> {
     return Database.transformResult(
       client.payment.findUniqueOrThrow({
         where: { id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new Payment(data));
+      .map((__raw) => Payment.__build({ __raw }, builder));
   }
 
   public static fromWithResolved(id: PaymentId): DatabaseResult<Payment<'WITH_RESOLVED'>> {
@@ -112,8 +130,11 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
       .map((
-        { MemberAsApprover, MemberAsPayer, MemberAsReceiver, ...rest },
-      ) => new Payment(rest, { Payer: MemberAsPayer, Receiver: MemberAsReceiver, Approver: MemberAsApprover }));
+        { MemberAsApprover, MemberAsPayer, MemberAsReceiver, ...__raw },
+      ) => new Payment({
+        __raw,
+        __rawResolved: { Payer: MemberAsPayer, Receiver: MemberAsReceiver, Approver: MemberAsApprover }
+      }));
   }
 
   public resolveRelation(): ModeWithDefault<Mode, DatabaseResult<Payment<'WITH_RESOLVED'>>> {
@@ -128,11 +149,11 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
         .mapErr(Database.dbErrorWith(metadata).transform('resolveRelation'))
         .map(
           (
-            { MemberAsApprover, MemberAsPayer, MemberAsReceiver, ...rest },
-          ) => new Payment(
-            rest,
-            { Payer: MemberAsPayer, Receiver: MemberAsReceiver, Approver: MemberAsApprover },
-          ),
+            { MemberAsApprover, MemberAsPayer, MemberAsReceiver, ...__raw },
+          ) => new Payment({
+            __raw,
+            __rawResolved: { Payer: MemberAsPayer, Receiver: MemberAsReceiver, Approver: MemberAsApprover },
+          }),
         ),
     );
   }
@@ -144,7 +165,6 @@ export const __Payment = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient
   public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}
-) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
 export type $Payment<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Payment<M>;

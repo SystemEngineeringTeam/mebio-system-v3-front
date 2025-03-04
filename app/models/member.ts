@@ -110,8 +110,8 @@ type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
-  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -154,8 +154,6 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
-    
-    this.isSelf = builder == null;
   }
 
   public static __build<M extends ModelMode = 'DEFAULT'>(rawData: RawData, builder?: Member): BuildModelResult<Member<M>> {
@@ -207,7 +205,7 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
           {
             __raw,
             __rawResolved: { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-          }
+          },
         ),
       );
   }
@@ -229,7 +227,7 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
             {
               __raw,
               __rawResolved: { MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus: MemberStatus!, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-            }
+            },
           ),
         ),
     );

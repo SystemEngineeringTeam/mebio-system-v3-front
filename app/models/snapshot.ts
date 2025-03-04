@@ -1,13 +1,11 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build } from '@/types/model';
 import type { Brand, Override } from '@/types/utils';
-import type {
-  PrismaClient,
-  Snapshot as SchemaRaw,
-} from '@prisma/client';
+import type { PrismaClient, Snapshot as SchemaRaw } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
+import { err, ok } from 'neverthrow';
 
 /// Metadata ///
 
@@ -40,10 +38,13 @@ interface SchemaResolvedRaw {
 interface SchemaResolved {
 }
 
+type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
+
 /// Model ///
 
 export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot<_Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
 
   public __raw: SchemaRaw;
@@ -51,7 +52,7 @@ export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClien
   public __rawResolved: undefined;
   public dataResolved: undefined;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  private constructor({ __raw }: RawData, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -60,14 +61,28 @@ export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClien
     };
   }
 
-  public static from(id: SnapshotId): DatabaseResult<Snapshot<'DEFAULT'>> {
+  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<Snapshot<'DEFAULT'>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new Snapshot(rawData));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new Snapshot(rawData, builder));
+  }
+
+  public static from(id: SnapshotId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<Snapshot<'DEFAULT'>>> {
     return Database.transformResult(
       client.snapshot.findUniqueOrThrow({
         where: { id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new Snapshot(data));
+      .map((__raw) => Snapshot.__build({ __raw }, builder));
   }
 
   public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<Snapshot> {

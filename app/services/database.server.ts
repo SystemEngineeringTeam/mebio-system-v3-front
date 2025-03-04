@@ -49,10 +49,10 @@ export class Database {
         .returnType<{ message: string; hint?: string }>()
         .with(
           { type: 'PERMISSION_DENIED' },
-          ({ _raw: { operator } }) => (
+          ({ _raw: { builder } }) => (
             {
               message: 'この操作は許可されていません',
-              hint: `操作者 ${operator.data.id} の権限が不足しています`,
+              hint: `操作者 ${builder.data.id} の権限が不足しています`,
             }
           ),
         )
