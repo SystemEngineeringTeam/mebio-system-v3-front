@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -10,6 +10,7 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { err, ok } from 'neverthrow';
 
 /// Metadata ///
 
@@ -41,22 +42,25 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: () => ModelEntityOf<$Member>;
+    Member: () => BuildModelResult<ModelEntityOf<$Member>>;
   };
 }
+
+type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 /// Model ///
 
 export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveExternal<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
+  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  private constructor({ __raw, __rawResolved }: RawData, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -68,23 +72,39 @@ export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client:
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new models.Member(r.Member),
+          Member: () => models.Member.__build({ __raw: r.Member }, builder),
         },
       }),
     );
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
+
+    this.isSelf = builder == null;
   }
 
-  public static from(id: MemberId): DatabaseResult<MemberActiveExternal<'DEFAULT'>> {
+  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberActiveExternal<'DEFAULT'>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new MemberActiveExternal(rawData));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new MemberActiveExternal(rawData, builder));
+  }
+
+  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberActiveExternal<'DEFAULT'>>> {
     return Database.transformResult(
       client.memberActiveExternal.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberActiveExternal(data));
+      .map((__raw) => MemberActiveExternal.__build({ __raw }, builder));
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<MemberActiveExternal<'WITH_RESOLVED'>> {
@@ -96,18 +116,18 @@ export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client:
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...rest }) => new MemberActiveExternal(rest, { Member: Member! }));
+      .map(({ Member, ...__raw }) => new MemberActiveExternal({ __raw, __rawResolved: { Member } }));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {
     throw new Error('Method not implemented.');
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberActiveExternal> {
+  public update( _data: Partial<Schema>): DatabaseResult<MemberActiveExternal> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
+  public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
 

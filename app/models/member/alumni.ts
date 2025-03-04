@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -10,6 +10,7 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
+import { err, ok } from 'neverthrow';
 
 /// Metadata ///
 
@@ -41,22 +42,25 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: () => ModelEntityOf<$Member>;
+    Member: () => BuildModelResult<ModelEntityOf<$Member>>;
   };
 }
+
+type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 /// Model ///
 
 export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
+  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  private constructor({ __raw, __rawResolved }: RawData, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -68,23 +72,40 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new models.Member(r.Member),
+          Member: () => models.Member.__build({__raw: r.Member}, builder),
         },
       }),
     );
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
+
+    
+    this.isSelf = builder == null;
   }
 
-  public static from(id: MemberId): DatabaseResult<MemberAlumni<'DEFAULT'>> {
+  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberAlumni<'DEFAULT'>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new MemberAlumni(rawData));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new MemberAlumni(rawData, builder));
+  }
+
+  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberAlumni<'DEFAULT'>>> {
     return Database.transformResult(
       client.memberAlumni.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberAlumni(data));
+      .map((__raw) => MemberAlumni.__build({ __raw }, builder));
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
@@ -95,7 +116,7 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map((data) => new MemberAlumni(data, data));
+      .map(({ Member, ...__raw }) => new MemberAlumni({ __raw, __rawResolved: { Member } }));
   }
 
   public resolveRelation(): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
@@ -108,7 +129,7 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
         }),
       )
         .mapErr(this.dbError.transform('resolveRelation'))
-        .map(({ Member, ...rest }) => new MemberAlumni(rest, { Member: Member! })),
+        .map(({ Member, ...__raw }) => new MemberAlumni({ __raw, __rawResolved: { Member } })),
     );
   }
 

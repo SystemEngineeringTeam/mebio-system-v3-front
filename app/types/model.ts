@@ -1,5 +1,7 @@
+import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
 import type { Prisma, PrismaClient } from '@prisma/client';
+import type { Result } from 'neverthrow';
 
 export interface ModelMetadata<
   M extends Uncapitalize<Prisma.ModelName>,
@@ -32,6 +34,16 @@ export interface Model<
   delete?: (...args: any[]) => DatabaseResult<void>;
 }
 
+export interface ModelRawData4build<SR, SRR> {
+  __raw: SR;
+  __rawResolved?: SRR;
+}
+
+export type BuildModelError =
+  | { type: 'PERMISSION_DENIED'; detail: { builder: ModelEntityOf<$Member> } };
+
+export type BuildModelResult<S> = Result<S, BuildModelError>;
+
 /**
  * __M = (client) => M のときの M
  */
@@ -43,17 +55,29 @@ export type ModelGenerator<
   SchemaResolvedRaw,
   SchemaResolved,
 > = (client: PrismaClient) => {
-  new(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, any>): Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+  // new(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, any>): Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
   // static methods //
 
   __prisma: PrismaClient;
-  from: (id: any) => DatabaseResult<Model<'DEFAULT', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
+
+  __build: (
+    rawData: ModelRawData4build<SchemaRaw, SchemaResolvedRaw>,
+    builder?: any // FIXME: any を `ModelEntityOf<$Member>` に縛る
+  ) => BuildModelResult<Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
+  
+  from: (
+    id: any,
+    builder: any  // FIXME: any を `ModelEntityOf<$Member>` に縛る
+  ) => DatabaseResult<BuildModelResult<Model<'DEFAULT', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>>;
   fromWithResolved?: (id: any) => DatabaseResult<Model<'WITH_RESOLVED', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
 };
 
 export type AnyModelGenerator = ModelGenerator<any, ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
 export type AnyModel = Model<any, ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
+
+// ref: https://stackoverflow.com/a/74657881
+type InstanceTypeSpy<TClass> = InstanceType<{ new(): never } & TClass>;
 
 /**
  * __M = (client) => M のときの M のインスタンス
@@ -61,7 +85,13 @@ export type AnyModel = Model<any, ModelMetadata<any, 'CATCH_ALL'>, any, any, any
  */
 export type ModelEntityOf<T>
   = T extends AnyModelGenerator
-    ? InstanceType<ReturnType<T>>
+  /*
+    NOTE:
+      `Model` はファクトリーパターンを採用するために, コンストラクタのアクセス修飾子を `private` した.  
+      そのため, `InstanceType<T>` の `T` の制約 `abstract new (...args: any) => any` を満たすための `public` なコンストラクタを失ったために
+      インスタンス化後の型を推論できなくなった.  なのでワークアラウンドとして `InstanceTypeSpy` を適用した.
+   */
+    ? InstanceTypeSpy<ReturnType<T>>
     : T extends AnyModel
       ? T
       : never;

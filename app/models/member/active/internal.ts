@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Override } from '@/types/utils';
 import type {
   Prisma,
@@ -10,6 +10,7 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
+import { err, ok } from 'neverthrow';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -45,14 +46,17 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: () => ModelEntityOf<$Member>;
+    Member: () => BuildModelResult<ModelEntityOf<$Member>>;
   };
 }
+
+type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 /// Model ///
 
 export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveInternal<Mode extends ModelMode = M> {
   public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
 
   public __raw: SchemaRaw;
@@ -60,7 +64,7 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  private constructor({ __raw, __rawResolved }: RawData, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -73,7 +77,7 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new models.Member(r.Member),
+          Member: () => models.Member.__build({ __raw: r.Member }, builder),
         },
       }),
     );
@@ -82,14 +86,28 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
     this.dataResolved = dataResolved;
   }
 
-  public static from(id: MemberId): DatabaseResult<MemberActiveInternal<'DEFAULT'>> {
+  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberActiveInternal<'DEFAULT'>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new MemberActiveInternal(rawData));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new MemberActiveInternal(rawData, builder));
+  }
+
+  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberActiveInternal<'DEFAULT'>>> {
     return Database.transformResult(
       client.memberActiveInternal.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberActiveInternal(data));
+      .map((__raw) => MemberActiveInternal.__build({ __raw }, builder));
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<MemberActiveInternal<'WITH_RESOLVED'>> {
@@ -100,7 +118,7 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...rest }) => new MemberActiveInternal(rest, { Member: Member! }));
+      .map(({ Member, ...__raw }) => new MemberActiveInternal({ __raw, __rawResolved: { Member } }));
   }
 
   public resolveRelation(): ModeWithDefault<Mode, DatabaseResult<MemberActiveInternal<'WITH_RESOLVED'>>> {
@@ -113,15 +131,15 @@ export const __MemberActiveInternal = (<M extends ModelMode = 'DEFAULT'>(client:
         }),
       )
         .mapErr(this.dbError.transform('resolveRelation'))
-        .map(({ Member, ...rest }) => new MemberActiveInternal(rest, { Member: Member! })),
+        .map(({ Member, ...__raw }) => new MemberActiveInternal({ __raw, __rawResolved: { Member } })),
     );
   }
 
-  public update(_operator: ModelEntityOf<ModelEntityOf<$Member>>, _data: Partial<Schema>): DatabaseResult<MemberActiveInternal> {
+  public update(_data: Partial<Schema>): DatabaseResult<MemberActiveInternal> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ModelEntityOf<ModelEntityOf<$Member>>): DatabaseResult<void> {
+  public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
 }) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;

@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -10,6 +10,7 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { err, ok } from 'neverthrow';
 
 /// Metadata ///
 
@@ -45,26 +46,29 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: () => ModelEntityOf<$Member>;
+    Member: () => BuildModelResult<ModelEntityOf<$Member>>;
   };
   updaterTo: {
-    hasDeleted: () => ModelEntityOf<$Member>;
-    lastRenewalDate: () => ModelEntityOf<$Member>;
+    hasDeleted: () => BuildModelResult<ModelEntityOf<$Member>>;
+    lastRenewalDate: () => BuildModelResult<ModelEntityOf<$Member>>;
   };
 }
+
+type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 /// Model ///
 
 export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberStatus<Mode extends ModelMode = M> {
   public static __prisma = client;
   private dbError = Database.dbErrorWith(metadata);
+  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
+  private constructor({ __raw, __rawResolved }: RawData, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -78,27 +82,43 @@ export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => new models.Member(r.Member),
+          Member: () => models.Member.__build({ __raw: r.Member }, builder),
         },
         updaterTo: {
-          hasDeleted: () => new models.Member(r.UpdatedHasDeletedBy),
-          lastRenewalDate: () => new models.Member(r.UpdatedLastRenewalDateBy),
+          hasDeleted: () => models.Member.__build({ __raw: r.UpdatedHasDeletedBy }, builder),
+          lastRenewalDate: () => models.Member.__build({ __raw: r.UpdatedLastRenewalDateBy }, builder),
         },
       }),
     );
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
+    
+    this.isSelf = builder == null;
   }
 
-  public static from(id: MemberId): DatabaseResult<MemberStatus<'DEFAULT'>> {
+  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberStatus<'DEFAULT'>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new MemberStatus(rawData));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new MemberStatus(rawData, builder));
+  }
+
+  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberStatus<'DEFAULT'>>> {
     return Database.transformResult(
       client.memberStatus.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberStatus(data));
+      .map((__raw) => MemberStatus.__build({ __raw }, builder));
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<MemberStatus<'WITH_RESOLVED'>> {
@@ -111,10 +131,12 @@ export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
       .map(
         (
-          { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy, ...rest },
+          { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy, ...__raw },
         ) => new MemberStatus(
-          rest,
-          { Member: Member!, UpdatedHasDeletedBy: UpdatedHasDeletedBy!, UpdatedLastRenewalDateBy: UpdatedLastRenewalDateBy! },
+          {
+            __raw,
+            __rawResolved: { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy },
+          }
         ),
       );
   }

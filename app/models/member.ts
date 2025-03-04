@@ -7,7 +7,7 @@ import type { $MemberSensitive } from '@/models/member/sensitive';
 import type { $MemberStatus } from '@/models/member/status';
 import type { $Payment } from '@/models/payment';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
 import type { MemberDetail } from '@/utils/member';
 import type {
@@ -19,7 +19,7 @@ import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
 import { toMemberDetail } from '@/utils/member';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
-import { errAsync } from 'neverthrow';
+import { err, ok } from 'neverthrow';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -87,36 +87,38 @@ interface SchemaResolvedRaw {
 interface SchemaResolved {
   _referenced: {
     paymentsAs: {
-      Payer: () => Array<ModelEntityOf<$Payment>>;
-      Receiver: () => Array<ModelEntityOf<$Payment>>;
-      Approver: () => Array<ModelEntityOf<$Payment>>;
+      Payer: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
+      Receiver: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
+      Approver: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
     };
     memberStatusAsUpdaterTo: {
-      HasDeleted: () => Array<ModelEntityOf<$MemberStatus>>;
-      LastRenewalDate: () => Array<ModelEntityOf<$MemberStatus>>;
+      HasDeleted: () => Array<BuildModelResult<ModelEntityOf<$MemberStatus>>>;
+      LastRenewalDate: () => Array<BuildModelResult<ModelEntityOf<$MemberStatus>>>;
     };
   };
   member: {
-    Status: () => ModelEntityOf<$MemberStatus>;
-    Base: () => ModelEntityOf<$MemberBase>;
-    Sensitive: () => ModelEntityOf<$MemberSensitive>;
+    Status: () => BuildModelResult<ModelEntityOf<$MemberStatus>>;
+    Base: () => BuildModelResult<ModelEntityOf<$MemberBase>>;
+    Sensitive: () => BuildModelResult<ModelEntityOf<$MemberSensitive>>;
     detail: MemberDetail;
   };
 }
+
+type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
 
 /// Model ///
 
 export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
   public static __prisma = client;
-
   private dbError = Database.dbErrorWith(metadata);
+  private isSelf;
 
   public __raw: SchemaRaw;
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, SchemaResolvedRaw>) {
+  private constructor({ __raw, __rawResolved }: RawData, private builder?: Member) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -132,19 +134,19 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
         _referenced: {
           paymentsAs: {
             // `map` のコールバックを Tear-off しようとしたそこのキミ！  このコンストラクターはオーバーロードされていて複数受け入れるから無理なんだな.
-            Payer: () => r.PaymentAsPayer.map((p) => new models.Payment(p)),
-            Receiver: () => r.PaymentAsReceiver.map((p) => new models.Payment(p)),
-            Approver: () => r.PaymentAsApprover.map((p) => new models.Payment(p)),
+            Payer: () => r.PaymentAsPayer.map((__raw) => models.Payment.__build({ __raw }, builder)),
+            Receiver: () => r.PaymentAsReceiver.map((__raw) => models.Payment.__build({ __raw }, builder)),
+            Approver: () => r.PaymentAsApprover.map((__raw) => models.Payment.__build({ __raw }, builder)),
           },
           memberStatusAsUpdaterTo: {
-            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((m) => new models.member.Status(m)),
-            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((m) => new models.member.Status(m)),
+            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((__raw) => models.member.Status.__build({ __raw }, builder)),
+            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((__raw) => models.member.Status.__build({ __raw }, builder)),
           },
         },
         member: {
-          Base: () => new models.member.Base(r.MemberBase),
-          Status: () => new models.member.Status(r.MemberStatus),
-          Sensitive: () => new models.member.Sensitive(r.MemberSensitive),
+          Base: () => models.member.Base.__build({ __raw: r.MemberBase }, builder),
+          Status: () => models.member.Status.__build({ __raw: r.MemberStatus }, builder),
+          Sensitive: () => models.member.Sensitive.__build({ __raw: r.MemberSensitive }, builder),
           detail: toMemberDetail(client, { MemberAlumni: r.MemberAlumni, MemberActive: r.MemberActive, MemberActiveExternal: r.MemberActiveExternal, MemberActiveInternal: r.MemberActiveInternal }),
         },
       }),
@@ -152,16 +154,42 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
+    
+    this.isSelf = builder == null;
   }
 
-  public static from(id: MemberId): DatabaseResult<Member<'DEFAULT'>> {
+  public static __build<M extends ModelMode = 'DEFAULT'>(rawData: RawData, builder?: Member): BuildModelResult<Member<M>> {
+    const isSelf = builder == null;
+    if (isSelf) {
+      return ok(new Member(rawData));
+    }
+
+    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+    if (builder.data.securityRole !== 'OWNER') {
+      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+    }
+
+    return ok(new Member(rawData, builder));
+  }
+
+  public static from(id: MemberId, builder: Member): DatabaseResult<BuildModelResult<Member<'DEFAULT'>>> {
     return Database.transformResult(
       client.member.findUniqueOrThrow({
         where: { id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new Member(data));
+      .map((__raw) => Member.__build({ __raw }, builder));
+  }
+
+  public static fromAsSelf(subject: Subject): DatabaseResult<BuildModelResult<Member<'DEFAULT'>>> {
+    return Database.transformResult(
+      client.member.findUniqueOrThrow({
+        where: { subject },
+      }),
+    )
+      .mapErr(Database.dbErrorWith(metadata).transform('fromAsSelf'))
+      .map((__raw) => Member.__build({ __raw }));
   }
 
   public static fromWithResolved(id: MemberId): DatabaseResult<Member<'WITH_RESOLVED'>> {
@@ -174,10 +202,12 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
       .map(
         (
-          { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
+          { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...__raw },
         ) => new Member(
-          rest,
-          { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+          {
+            __raw,
+            __rawResolved: { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+          }
         ),
       );
   }
@@ -194,29 +224,23 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
         .mapErr(this.dbError.transform('resolveRelation'))
         .map(
           (
-            { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
+            { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...__raw },
           ) => new Member(
-            rest,
-            { MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus: MemberStatus!, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+            {
+              __raw,
+              __rawResolved: { MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus: MemberStatus!, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+            }
           ),
         ),
     );
   }
 
-  public update(operator: Member<'DEFAULT'>, data: Partial<Schema>): DatabaseResult<Member> {
-    // TODO: 後で権限ロジックの外部化をする
-    if (operator.data.securityRole !== 'OWNER') {
-      return errAsync(this.dbError.create('update')({
-        type: 'PERMISSION_DENIED',
-        _raw: { operator },
-      }));
-    }
-
+  public update(data: Partial<Schema>): DatabaseResult<Member> {
     return Database.transformResult(
       client.member.update({ data, where: { id: this.data.id } }),
     )
       .mapErr(this.dbError.transform('update'))
-      .map((m) => new Member(m));
+      .map((__raw) => new Member({ __raw }, this.builder));
   }
 
   public delete(_operator: Member): DatabaseResult<void> {
