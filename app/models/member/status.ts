@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -9,7 +9,7 @@ import type {
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
-import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { includeKeys2select, isSelf, matchWithResolved } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 
 /// Metadata ///
@@ -54,11 +54,13 @@ interface SchemaResolved {
   };
 }
 
-type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
+type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
+type RawData = ModelRawData4build<ThisModel>;
 
 /// Model ///
 
-export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberStatus<Mode extends ModelMode = M> {
+export const __MemberStatus = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberStatus implements ThisModel<Mode> {
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
@@ -95,10 +97,12 @@ export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
     this.dataResolved = dataResolved;
   }
 
-  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberStatus<'DEFAULT'>> {
-    const isSelf = builder == null;
-    if (isSelf) {
-      return ok(new MemberStatus(rawData));
+  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
+  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+  public static __build<M extends ModelMode>(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
+    const Model = __MemberStatus<M>(client);
+    if (isSelf(builder)) {
+      return ok(new Model(rawData));
     }
 
     // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
@@ -106,50 +110,54 @@ export const __MemberStatus = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
     }
 
-    return ok(new MemberStatus(rawData, builder));
+    return ok(new Model(rawData, builder));
   }
 
-  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberStatus<'DEFAULT'>>> {
+  public static from(id: MemberId) {
     return Database.transformResult(
       client.memberStatus.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => MemberStatus.__build({ __raw }, builder));
+      .map((__raw) => ({
+        buildBy: (builder: ModelEntityOf<$Member>) => MemberStatus.__build({ __raw }, builder),
+        buildBySelf: () => MemberStatus.__build({ __raw }),
+      }));
   }
 
-  public static fromWithResolved(id: MemberId): DatabaseResult<MemberStatus<'WITH_RESOLVED'>> {
-    return Database.transformResult(
+  public static fromWithResolved(id: MemberId) {
+    const rawData = Database.transformResult(
       client.memberStatus.findUniqueOrThrow({
         where: { memberId: id },
         include: includeKeys2select(includeKeys),
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(
-        (
-          { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy, ...__raw },
-        ) => new MemberStatus(
-          {
-            __raw,
-            __rawResolved: { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy },
-          },
-        ),
-      );
+      .map((
+        { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy, ...__raw },
+      ) => ({
+        __raw,
+        __rawResolved: { Member, UpdatedHasDeletedBy, UpdatedLastRenewalDateBy },
+      }));
+
+    return rawData.map(({ __raw, __rawResolved }) => ({
+      buildBy: (builder: ModelEntityOf<$Member>) => MemberStatus.__build({ __raw, __rawResolved }, builder),
+      buildBySelf: () => MemberStatus.__build({ __raw, __rawResolved }),
+    }));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {
     throw new Error('Method not implemented.');
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberStatus<'DEFAULT'>> {
+  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
+  public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+}) satisfies ModelGen;
 
-export type $MemberStatus<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberStatus<M>;
+export type $MemberStatus<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __MemberStatus<M>;

@@ -6,17 +6,18 @@ import type { $MemberAlumni } from '@/models/member/alumni';
 import type { $MemberSensitive } from '@/models/member/sensitive';
 import type { $MemberStatus } from '@/models/member/status';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Nullable, Override } from '@/types/utils';
 import type { MemberDetail } from '@/utils/member';
 import type {
+  Prisma,
   PrismaClient,
   MemberBase as SchemaRaw,
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { toMemberDetail } from '@/utils/member';
-import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { includeKeys2select, isSelf, matchWithResolved } from '@/utils/model';
 import { err, ok, ResultAsync } from 'neverthrow';
 
 /// Metadata ///
@@ -58,11 +59,13 @@ interface SchemaResolved {
   };
 }
 
-type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
+type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
+type RawData = ModelRawData4build<ThisModel>;
 
 /// Model ///
 
-export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberBase<Mode extends ModelMode = M> {
+export const __MemberBase = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberBase implements ThisModel<Mode> {
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
@@ -99,10 +102,12 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
     this.dataResolved = dataResolved;
   }
 
-  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberBase<'DEFAULT'>> {
-    const isSelf = builder == null;
-    if (isSelf) {
-      return ok(new MemberBase(rawData));
+  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
+  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+  public static __build<M extends ModelMode>(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
+    const Model = __MemberBase<M>(client);
+    if (isSelf(builder)) {
+      return ok(new Model(rawData));
     }
 
     // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
@@ -110,21 +115,24 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
       return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
     }
 
-    return ok(new MemberBase(rawData, builder));
+    return ok(new Model(rawData, builder));
   }
 
-  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberBase<'DEFAULT'>>> {
+  public static from(id: MemberId) {
     return Database.transformResult(
       client.memberBase.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => MemberBase.__build({ __raw }, builder));
+      .map((__raw) => ({
+        buildBy: (builder: ModelEntityOf<$Member>) => MemberBase.__build({ __raw }, builder),
+        buildBySelf: () => MemberBase.__build({ __raw }),
+      }));
   }
 
-  public static fromWithResolved(id: MemberId): DatabaseResult<MemberBase<'WITH_RESOLVED'>> {
-    return ResultAsync.combine([
+  public static fromWithResolved(id: MemberId) {
+    const rawData = ResultAsync.combine([
       Database.transformResult(
         client.memberBase.findUniqueOrThrow({
           where: { memberId: id },
@@ -140,12 +148,15 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
       .map((
         [__raw, { MemberStatus, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, ...Member }],
-      ) => new MemberBase(
-        {
-          __raw,
-          __rawResolved: { Member, MemberStatus: MemberStatus!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni },
-        },
-      ));
+      ) => ({
+        __raw,
+        __rawResolved: { Member, MemberStatus: MemberStatus!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni },
+      }));
+
+    return rawData.map(({ __raw, __rawResolved }) => ({
+      buildBy: (builder: ModelEntityOf<$Member>) => MemberBase.__build({ __raw, __rawResolved }, builder),
+      buildBySelf: () => MemberBase.__build({ __raw, __rawResolved }),
+    }));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {
@@ -162,6 +173,6 @@ export const __MemberBase = (<M extends ModelMode = 'DEFAULT'>(client: PrismaCli
 
   public hoge() { }
 }
-) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+) satisfies ModelGen;
 
-export type $MemberBase<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberBase<M>;
+export type $MemberBase<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __MemberBase<M>;

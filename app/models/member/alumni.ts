@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -9,7 +9,7 @@ import type {
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
-import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
+import { includeKeys2select, isSelf, matchWithDefault, matchWithResolved } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 
 /// Metadata ///
@@ -46,11 +46,13 @@ interface SchemaResolved {
   };
 }
 
-type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
+type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
+type RawData = ModelRawData4build<ThisModel>;
 
 /// Model ///
 
-export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberAlumni<Mode extends ModelMode = M> {
+export const __MemberAlumni = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberAlumni implements ThisModel<Mode> {
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
@@ -81,10 +83,12 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
     this.dataResolved = dataResolved;
   }
 
-  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<MemberAlumni<'DEFAULT'>> {
-    const isSelf = builder == null;
-    if (isSelf) {
-      return ok(new MemberAlumni(rawData));
+  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
+  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+  public static __build<M extends ModelMode>(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
+    const Model = __MemberAlumni<M>(client);
+    if (isSelf(builder)) {
+      return ok(new Model(rawData));
     }
 
     // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
@@ -92,32 +96,40 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
       return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
     }
 
-    return ok(new MemberAlumni(rawData, builder));
+    return ok(new Model(rawData, builder));
   }
 
-  public static from(id: MemberId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<MemberAlumni<'DEFAULT'>>> {
+  public static from(id: MemberId) {
     return Database.transformResult(
       client.memberAlumni.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => MemberAlumni.__build({ __raw }, builder));
+      .map((__raw) => ({
+        buildBy: (builder: ModelEntityOf<$Member>) => MemberAlumni.__build({ __raw }, builder),
+        buildBySelf: () => MemberAlumni.__build({ __raw }),
+      }));
   }
 
-  public static fromWithResolved(id: MemberId): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
-    return Database.transformResult(
+  public static fromWithResolved(id: MemberId) {
+    const rawData = Database.transformResult(
       client.memberAlumni.findUniqueOrThrow({
         where: { memberId: id },
         include: includeKeys2select(includeKeys),
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...__raw }) => new MemberAlumni({ __raw, __rawResolved: { Member } }));
+      .map(({ Member, ...__raw }) => ({ __raw, __rawResolved: { Member } }));
+
+    return rawData.map(({ __raw, __rawResolved }) => ({
+      buildBy: (builder: ModelEntityOf<$Member>) => MemberAlumni.__build({ __raw, __rawResolved }, builder),
+      buildBySelf: () => MemberAlumni.__build({ __raw, __rawResolved }),
+    }));
   }
 
-  public resolveRelation(): DatabaseResult<MemberAlumni<'WITH_RESOLVED'>> {
-    return matchWithDefault(
+  public resolveRelation() {
+    const rawData = matchWithDefault(
       this.__rawResolved,
       () => Database.transformResult(
         client.memberAlumni.findUniqueOrThrow({
@@ -126,8 +138,13 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
         }),
       )
         .mapErr(this.dbError.transform('resolveRelation'))
-        .map(({ Member, ...__raw }) => new MemberAlumni({ __raw, __rawResolved: { Member } })),
+        .map(({ Member, ...__raw }) => ({ __raw, __rawResolved: { Member } })),
     );
+
+    return rawData.map(({ __raw, __rawResolved }) => ({
+      buildBy: (builder: ModelEntityOf<$Member>) => MemberAlumni.__build({ __raw, __rawResolved }, builder),
+      buildBySelf: () => MemberAlumni.__build({ __raw, __rawResolved }),
+    }));
   }
 
   public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberAlumni> {
@@ -137,6 +154,6 @@ export const __MemberAlumni = (<M extends ModelMode = 'DEFAULT'>(client: PrismaC
   public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+}) satisfies ModelGen;
 
-export type $MemberAlumni<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberAlumni<M>;
+export type $MemberAlumni<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __MemberAlumni<M>;

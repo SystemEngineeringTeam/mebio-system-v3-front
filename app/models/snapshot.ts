@@ -1,10 +1,11 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build } from '@/types/model';
+import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build } from '@/types/model';
 import type { Brand, Override } from '@/types/utils';
 import type { PrismaClient, Snapshot as SchemaRaw } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
+import { isSelf } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 
 /// Metadata ///
@@ -38,19 +39,19 @@ interface SchemaResolvedRaw {
 interface SchemaResolved {
 }
 
-type RawData = ModelRawData4build<SchemaRaw, SchemaResolvedRaw>;
+type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
+type RawData = ModelRawData4build<ThisModel>;
 
 /// Model ///
 
-export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot<_Mode extends ModelMode = M> {
+export const __Snapshot = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot implements ThisModel<Mode> {
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
 
   public __raw: SchemaRaw;
   public data: Schema;
-  public __rawResolved: undefined;
-  public dataResolved: undefined;
 
   private constructor({ __raw }: RawData, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
@@ -61,10 +62,12 @@ export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClien
     };
   }
 
-  public static __build(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<Snapshot<'DEFAULT'>> {
-    const isSelf = builder == null;
-    if (isSelf) {
-      return ok(new Snapshot(rawData));
+  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
+  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+  public static __build<M extends ModelMode>(rawData: { __raw: SchemaRaw; __rawResolved?: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
+    const Model = __Snapshot<M>(client);
+    if (isSelf(builder)) {
+      return ok(new Model(rawData));
     }
 
     // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
@@ -72,26 +75,29 @@ export const __Snapshot = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClien
       return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
     }
 
-    return ok(new Snapshot(rawData, builder));
+    return ok(new Model(rawData, builder));
   }
 
-  public static from(id: SnapshotId, builder: ModelEntityOf<$Member>): DatabaseResult<BuildModelResult<Snapshot<'DEFAULT'>>> {
+  public static from(id: SnapshotId) {
     return Database.transformResult(
       client.snapshot.findUniqueOrThrow({
         where: { id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => Snapshot.__build({ __raw }, builder));
+      .map((__raw) => ({
+        buildBy: (builder: ModelEntityOf<$Member>) => Snapshot.__build({ __raw }, builder),
+        buildBySelf: () => Snapshot.__build({ __raw }),
+      }));
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<Snapshot> {
+  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
+  public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+}) satisfies ModelGen;
 
-export type $Snapshot<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Snapshot<M>;
+export type $Snapshot<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __Snapshot<M>;

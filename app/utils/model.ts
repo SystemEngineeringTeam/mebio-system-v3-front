@@ -1,4 +1,5 @@
-import type { ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { $Member } from '@/models/member';
+import type { ModelEntityOf, ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
 
 export function includeKeys2select<IncludeKey extends string>(includeKeys: readonly IncludeKey[]): Record<IncludeKey, true> {
@@ -31,4 +32,8 @@ export function matchWithDefault<Mode extends ModelMode, R, D>(
   } else {
     return null as ModeWithDefault<Mode, D>;
   }
+}
+
+export function isSelf(builder: Nullable<ModelEntityOf<$Member>>): builder is Nullable<ModelEntityOf<$Member>> {
+  return builder == null;
 }
