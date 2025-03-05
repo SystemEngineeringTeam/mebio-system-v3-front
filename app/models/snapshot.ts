@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build } from '@/types/model';
+import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf } from '@/types/model';
 import type { Brand, Override } from '@/types/utils';
 import type { PrismaClient, Snapshot as SchemaRaw } from '@prisma/client';
 import { Database } from '@/services/database.server';
@@ -45,7 +45,8 @@ type RawData = ModelRawData4build<ThisModel>;
 
 /// Model ///
 
-export const __Snapshot = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot implements ThisModel<Mode> {
+// eslint-disable-next-line func-style, antfu/top-level-function
+export const __Snapshot = <Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot implements ThisModel<Mode> {
   public static __prisma = client;
 
   private dbError = Database.dbErrorWith(metadata);
@@ -53,7 +54,7 @@ export const __Snapshot = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaCl
   public __raw: SchemaRaw;
   public data: Schema;
 
-  private constructor({ __raw }: RawData, private builder?: ModelEntityOf<$Member>) {
+  private constructor({ __raw }: { __raw: ModelSchemaRawOf<ModelGen> }, private builder?: ModelEntityOf<$Member>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -62,10 +63,8 @@ export const __Snapshot = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaCl
     };
   }
 
-  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
-  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
-  public static __build<M extends ModelMode>(rawData: { __raw: SchemaRaw; __rawResolved?: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
-    const Model = __Snapshot<M>(client);
+  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>> {
+    const Model = __Snapshot<'DEFAULT'>(client);
     if (isSelf(builder)) {
       return ok(new Model(rawData));
     }
@@ -98,6 +97,6 @@ export const __Snapshot = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaCl
   public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGen;
+};
 
 export type $Snapshot<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __Snapshot<M>;

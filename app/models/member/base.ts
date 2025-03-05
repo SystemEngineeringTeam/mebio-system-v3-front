@@ -10,7 +10,6 @@ import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetad
 import type { Nullable, Override } from '@/types/utils';
 import type { MemberDetail } from '@/utils/member';
 import type {
-  Prisma,
   PrismaClient,
   MemberBase as SchemaRaw,
 } from '@prisma/client';

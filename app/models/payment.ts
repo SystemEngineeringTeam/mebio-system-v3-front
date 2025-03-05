@@ -144,8 +144,8 @@ export const __Payment = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaCli
       }));
 
     return rawData.map(({ __raw, __rawResolved }) => ({
-      // buildBy: (builder: ModelEntityOf<$Member>) => Payment.__build({ __raw, __rawResolved }, builder),
-      // buildBySelf: () => Payment.__build({ __raw, __rawResolved }),
+      buildBy: (builder: ModelEntityOf<$Member>) => Payment.__build({ __raw, __rawResolved }, builder),
+      buildBySelf: () => Payment.__build({ __raw, __rawResolved }),
     }));
   }
 

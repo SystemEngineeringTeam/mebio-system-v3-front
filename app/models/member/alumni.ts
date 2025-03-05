@@ -147,11 +147,11 @@ export const __MemberAlumni = (<Mode extends ModelMode = 'DEFAULT'>(client: Pris
     }));
   }
 
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberAlumni> {
+  public update(_data: Partial<Schema>): DatabaseResult<MemberAlumni> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
+  public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
 }) satisfies ModelGen;
