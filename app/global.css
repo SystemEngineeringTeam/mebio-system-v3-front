@@ -26,7 +26,7 @@ body {
     min-height: calc(100vh - var(--header-height) - var(--footer-height));
   }
 
-  main:has([data-scrollable="false"]) {
+  main:has([data-scrollable='false']) {
     height: calc(100vh - var(--header-height) - var(--footer-height));
   }
 }
@@ -94,7 +94,6 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
-
 
 @layer base {
   * {
