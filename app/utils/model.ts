@@ -1,4 +1,3 @@
-import type { $Member } from '@/models/member';
 import type { ModelMode, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
 
@@ -32,8 +31,4 @@ export function matchWithDefault<Mode extends ModelMode, R, D>(
   } else {
     return null as ModeWithDefault<Mode, D>;
   }
-}
-
-export function isSelf(builder: Nullable<$Member>): builder is Nullable<$Member> {
-  return builder == null;
 }

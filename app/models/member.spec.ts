@@ -1,8 +1,9 @@
 import type { ModelSchemaOf, ModelSchemaRawOf } from '@/types/model';
 import type { PrismaClient } from '@prisma/client';
+import type { $Member } from './member';
 import { Database } from '@/services/database.server';
 import { PrismockClient } from 'prismock';
-import { $Member, MemberId, Subject } from './member';
+import { __Member, MemberId, Subject } from './member';
 
 const memberDataRaw = {
   id: '0188c0f2-8e47-11ec-b909-0242ac120002',
@@ -21,11 +22,11 @@ const memberData = {
 
 describe('部員モデル', () => {
   let client: PrismaClient;
-  let _Member: ReturnType<typeof $Member['with']>;
+  let Member: ReturnType<typeof __Member>;
 
   beforeEach(async () => {
     client = new PrismockClient();
-    _Member = $Member.with(client);
+    Member = __Member(client);
     await client.$connect();
   });
 
@@ -34,36 +35,35 @@ describe('部員モデル', () => {
   });
 
   it('生データから作成できるか', () => {
-    const rBuild = _Member.__buildBySelf({ __raw: memberDataRaw });
-    expect(() => rBuild._unsafeUnwrap()).not.toThrow();
+    expect(() => new Member(memberDataRaw)).not.toThrow();
   });
 
   it('生データを取得できるか', () => {
-    const member = _Member.__buildBySelf({ __raw: memberDataRaw })._unsafeUnwrap();
+    const member = new Member(memberDataRaw);
     expect(member.__raw).toEqual(memberDataRaw);
   });
 
   it('データが正規化されるか', () => {
-    const member = _Member.__buildBySelf({ __raw: memberDataRaw })._unsafeUnwrap();
+    const member = new Member(memberDataRaw);
     expect(member.data).toEqual(memberData);
   });
 
-  it('自身の Subject から部員モデルをコンストラクトできるか', async () => {
+  it('部員 ID から部員モデルをコンストラクトできるか', async () => {
     (await Database.transformResult(
       client.member.create({
         data: memberDataRaw,
       }),
     ))._unsafeUnwrap();
 
-    const subject = memberData.subject;
-    const member = await _Member.fromAsSelf(subject);
+    const memberId = memberData.id;
+    const member = (await Member.from(memberId))._unsafeUnwrap();
 
     expect(member.data).toEqual(memberData);
   });
 
-  it('存在しない Subject のときに `NO_ROWS_FOUND` になるか', async () => {
-    const subject = memberData.subject;
-    const rMember = await $Member.fromAsSelf(subject);
+  it('不正な部員 ID のときに `NO_ROWS_FOUND` になるか', async () => {
+    const memberId = memberData.id;
+    const rMember = await Member.from(memberId);
 
     expect(rMember.isErr()).toBe(true);
     if (rMember.isErr()) {
@@ -72,12 +72,12 @@ describe('部員モデル', () => {
   });
 
   it('リレーション済みでないモデルでリレーションを解決できるか', () => {
-    const _member = $Member.__build({ __raw: memberDataRaw })._unsafeUnwrap();
+    const _member = new Member(memberDataRaw);
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().not.toEqualTypeOf<never>();
   });
 
   it('リレーション済みのモデルでリレーションを解決できないか', () => {
-    const _member = $Member.__build<'WITH_RESOLVED'>({ __raw: memberDataRaw /* 本当は第 2 引数に ResolvedRaw が必要 */ })._unsafeUnwrap();
+    const _member = new Member<'WITH_RESOLVED'>(memberDataRaw /* 本当は第 2 引数に ResolvedRaw が必要 */);
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().toEqualTypeOf<never>();
   });
 });

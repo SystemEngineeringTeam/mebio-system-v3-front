@@ -7,7 +7,7 @@ import type { $MemberSensitive } from '@/models/member/sensitive';
 import type { $MemberStatus } from '@/models/member/status';
 import type { $Payment } from '@/models/payment';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
 import type { MemberDetail } from '@/utils/member';
 import type {
@@ -19,7 +19,7 @@ import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
 import { toMemberDetail } from '@/utils/member';
 import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
-import { err, ok } from 'neverthrow';
+import { errAsync } from 'neverthrow';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -87,45 +87,36 @@ interface SchemaResolvedRaw {
 interface SchemaResolved {
   _referenced: {
     paymentsAs: {
-      Payer: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
-      Receiver: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
-      Approver: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
+      Payer: () => Array<ModelEntityOf<$Payment>>;
+      Receiver: () => Array<ModelEntityOf<$Payment>>;
+      Approver: () => Array<ModelEntityOf<$Payment>>;
     };
     memberStatusAsUpdaterTo: {
-      HasDeleted: () => Array<BuildModelResult<ModelEntityOf<$MemberStatus>>>;
-      LastRenewalDate: () => Array<BuildModelResult<ModelEntityOf<$MemberStatus>>>;
+      HasDeleted: () => Array<ModelEntityOf<$MemberStatus>>;
+      LastRenewalDate: () => Array<ModelEntityOf<$MemberStatus>>;
     };
   };
   member: {
-    Status: () => BuildModelResult<ModelEntityOf<$MemberStatus>>;
-    Base: () => BuildModelResult<ModelEntityOf<$MemberBase>>;
-    Sensitive: () => BuildModelResult<ModelEntityOf<$MemberSensitive>>;
+    Status: () => ModelEntityOf<$MemberStatus>;
+    Base: () => ModelEntityOf<$MemberBase>;
+    Sensitive: () => ModelEntityOf<$MemberSensitive>;
     detail: MemberDetail;
   };
 }
 
-type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
-type ThisModel<M extends ModelMode = 'DEFAULT'> = $Member<M>;
-type RawData = ModelRawData4build<ThisModel>;
-
 /// Model ///
 
-export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
+export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
+  public static __prisma = client;
+
   private dbError = Database.dbErrorWith(metadata);
-  private client;
-  public declare __struct: ThisModelImpl<Mode>;
 
   public __raw: SchemaRaw;
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  private constructor(
-    public __prisma: PrismaClient,
-    { __raw, __rawResolved }: RawData,
-    private builder?: ThisModel,
-  ) {
+  public constructor(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, SchemaResolvedRaw>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -134,139 +125,103 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
       securityRole: zSecurityRoles.parse(__raw.securityRole),
     };
 
-    const { models } = new Database(__prisma);
+    const { models } = new Database(client);
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
       __rawResolved,
       (r) => ({
         _referenced: {
           paymentsAs: {
-            Payer: () => r.PaymentAsPayer.map((__raw) => models.Payment.__build<'DEFAULT'>({ __raw }, builder)),
-            Receiver: () => r.PaymentAsReceiver.map((__raw) => models.Payment.__build({ __raw }, builder)),
-            Approver: () => r.PaymentAsApprover.map((__raw) => models.Payment.__build({ __raw }, builder)),
+            // `map` のコールバックを Tear-off しようとしたそこのキミ！  このコンストラクターはオーバーロードされていて複数受け入れるから無理なんだな.
+            Payer: () => r.PaymentAsPayer.map((p) => new models.Payment(p)),
+            Receiver: () => r.PaymentAsReceiver.map((p) => new models.Payment(p)),
+            Approver: () => r.PaymentAsApprover.map((p) => new models.Payment(p)),
           },
           memberStatusAsUpdaterTo: {
-            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((__raw) => models.member.Status.__build({ __raw }, builder)),
-            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((__raw) => models.member.Status.__build({ __raw }, builder)),
+            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((m) => new models.member.Status(m)),
+            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((m) => new models.member.Status(m)),
           },
         },
         member: {
-          Base: () => models.member.Base.__build({ __raw: r.MemberBase }, builder),
-          Status: () => models.member.Status.__build({ __raw: r.MemberStatus }, builder),
-          Sensitive: () => models.member.Sensitive.__build({ __raw: r.MemberSensitive }, builder),
-          detail: toMemberDetail(client, { MemberAlumni: r.MemberAlumni, MemberActive: r.MemberActive, MemberActiveExternal: r.MemberActiveExternal, MemberActiveInternal: r.MemberActiveInternal }, builder),
+          Base: () => new models.member.Base(r.MemberBase),
+          Status: () => new models.member.Status(r.MemberStatus),
+          Sensitive: () => new models.member.Sensitive(r.MemberSensitive),
+          detail: toMemberDetail(client, { MemberAlumni: r.MemberAlumni, MemberActive: r.MemberActive, MemberActiveExternal: r.MemberActiveExternal, MemberActiveInternal: r.MemberActiveInternal }),
         },
       }),
     );
 
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
-    this.client = __prisma;
   }
 
-  public static with(client: PrismaClient) {
-    const internal = {
-      __build: (rawData, builder) => {
-        // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-        if (builder.data.securityRole !== 'OWNER') {
-          return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
-        }
-
-        return ok({
-          default: new $Member(client, rawData, builder),
-          withResolved: new $Member<'WITH_RESOLVED'>(client, rawData, builder),
-        });
-      },
-      __buildBySelf: (rawData) => ok({
-        default: new $Member(client, rawData),
-        withResolved: new $Member<'WITH_RESOLVED'>(client, rawData),
+  public static from(id: MemberId): DatabaseResult<Member<'DEFAULT'>> {
+    return Database.transformResult(
+      client.member.findUniqueOrThrow({
+        where: { id },
       }),
-    } satisfies ModelBuilderInternal<ThisModel>;
-
-    return {
-      ...internal,
-      from: (id: MemberId) => {
-        const rawData = Database.transformResult(
-          client.member.findUniqueOrThrow({
-            where: { id },
-          }),
-        )
-          .mapErr(Database.dbErrorWith(metadata).transform('from'))
-          .map((__raw) => ({ __raw }));
-
-        return rawData.map(({ __raw }) => ({
-          buildBy: (builder) => internal.__build({ __raw, __rawResolved: undefined }, builder).map((m) => m.default),
-          buildBySelf: () => internal.__buildBySelf({ __raw, __rawResolved: undefined }).map((m) => m.default),
-        }));
-      },
-
-      fromWithResolved: (id: MemberId) => {
-        const rawData = Database.transformResult(
-          client.member.findUniqueOrThrow({
-            where: { id },
-            include: includeKeys2select(includeKeys),
-          }),
-        )
-          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-          .map(
-            (
-              { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...__raw },
-            ) => ({
-              __raw,
-              __rawResolved: { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-            }),
-          );
-
-        return rawData.map(({ __raw, __rawResolved }) => ({
-          buildBy: (builder: ThisModel) => internal.__build({ __raw, __rawResolved }, builder).map((m) => m.withResolved),
-          buildBySelf: () => internal.__buildBySelf({ __raw, __rawResolved }).map((m) => m.withResolved),
-        }));
-      },
-    } satisfies ModelBuilder<ThisModel>;
+    )
+      .mapErr(Database.dbErrorWith(metadata).transform('from'))
+      .map((data) => new Member(data));
   }
 
-  public resolveRelation(): ModelResolver<Mode, ThisModel> {
+  public static fromWithResolved(id: MemberId): DatabaseResult<Member<'WITH_RESOLVED'>> {
+    return Database.transformResult(
+      client.member.findUniqueOrThrow({
+        where: { id },
+        include: includeKeys2select(includeKeys),
+      }),
+    )
+      .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
+      .map(
+        (
+          { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
+        ) => new Member(
+          rest,
+          { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+        ),
+      );
+  }
+
+  public resolveRelation(): ModeWithDefault<Mode, DatabaseResult<Member<'WITH_RESOLVED'>>> {
     return matchWithDefault(
       this.__rawResolved,
-      () => {
-        const rawData = Database.transformResult(
-          this.client.member.findUniqueOrThrow({
-            where: { id: this.data.id },
-            include: includeKeys2select(includeKeys),
-          }),
-        )
-          .mapErr(this.dbError.transform('resolveRelation'))
-          .map(
-            (
-              { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...__raw },
-            ) => ({
-              __raw,
-              __rawResolved: { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-            }),
-          );
-
-        const { __build, __buildBySelf } = $Member.with(this.client);
-        return rawData.map(({ __raw, __rawResolved }) => ({
-          buildBy: (builder: ThisModel) => __build({ __raw, __rawResolved }, builder).map((m) => m.withResolved),
-          buildBySelf: () => __buildBySelf({ __raw, __rawResolved }).map((m) => m.withResolved),
-        }));
-      },
+      () => Database.transformResult(
+        client.member.findUniqueOrThrow({
+          where: { id: this.data.id },
+          include: includeKeys2select(includeKeys),
+        }),
+      )
+        .mapErr(this.dbError.transform('resolveRelation'))
+        .map(
+          (
+            { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
+          ) => new Member(
+            rest,
+            { MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus: MemberStatus!, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
+          ),
+        ),
     );
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
-    throw new Error('Method not implemented.');
+  public update(operator: Member<'DEFAULT'>, data: Partial<Schema>): DatabaseResult<Member> {
+    // TODO: 後で権限ロジックの外部化をする
+    if (operator.data.securityRole !== 'OWNER') {
+      return errAsync(this.dbError.create('update')({
+        type: 'PERMISSION_DENIED',
+        _raw: { operator },
+      }));
+    }
+
+    return Database.transformResult(
+      client.member.update({ data, where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('update'))
+      .map((m) => new Member(m));
   }
 
-  public delete(_operator: ThisModel): DatabaseResult<void> {
+  public delete(_operator: Member): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
+}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-  public hoge() { }
-}
-
-{
-  const Member = $Member.with({} as PrismaClient);
-  const member = (await Member.from(''))._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
-  const _m = (await member.resolveRelation())._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
-  const a = (await _m.resolveRelation())._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
-}
+export type $Member<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Member<M>;

@@ -2,7 +2,7 @@ import type { $Member } from '@/models/member';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Nullable, Override } from '@/types/utils';
 import type { MemberDetailActive } from '@/utils/member';
 import type {
@@ -12,8 +12,8 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { toMemberDetailActive } from '@/utils/member';
-import { includeKeys2select, isSelf, matchWithResolved } from '@/utils/model';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { includeKeys2select, matchWithResolved } from '@/utils/model';
+import { ResultAsync } from 'neverthrow';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -48,19 +48,14 @@ interface SchemaResolvedRaw {
 
 type SchemaResolved = {
   _parent: {
-    Member: () => BuildModelResult<ModelEntityOf<$Member>>;
+    Member: () => ModelEntityOf<$Member>;
   };
 } & MemberDetailActive;
 
-type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
-type RawData = ModelRawData4build<ThisModel>;
-
 /// Model ///
 
-export const __MemberActive = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActive implements ThisModel<Mode> {
+export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActive<Mode extends ModelMode = M> {
   public static __prisma = client;
-
   private dbError = Database.dbErrorWith(metadata);
 
   public __raw: SchemaRaw;
@@ -68,7 +63,7 @@ export const __MemberActive = (<Mode extends ModelMode = 'DEFAULT'>(client: Pris
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  private constructor({ __raw, __rawResolved }: RawData, private builder?: ModelEntityOf<$Member>) {
+  public constructor(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, SchemaResolvedRaw>) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -81,7 +76,7 @@ export const __MemberActive = (<Mode extends ModelMode = 'DEFAULT'>(client: Pris
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => models.Member.__build({ __raw: r.Member }, builder),
+          Member: () => new models.Member(r.Member),
         },
         ...toMemberDetailActive(client, { MemberActiveInternal: r.MemberActiveInternal, MemberActiveExternal: r.MemberActiveExternal }),
       }),
@@ -91,37 +86,18 @@ export const __MemberActive = (<Mode extends ModelMode = 'DEFAULT'>(client: Pris
     this.dataResolved = dataResolved;
   }
 
-  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
-  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
-  public static __build<M extends ModelMode>(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
-    const Model = __MemberActive<M>(client);
-    if (isSelf(builder)) {
-      return ok(new Model(rawData));
-    }
-
-    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-    if (builder.data.securityRole !== 'OWNER') {
-      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
-    }
-
-    return ok(new Model(rawData, builder));
-  }
-
-  public static from(id: MemberId) {
+  public static from(id: MemberId): DatabaseResult<MemberActive<'DEFAULT'>> {
     return Database.transformResult(
       client.memberActive.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => ({
-        buildBy: (builder: ModelEntityOf<$Member>) => MemberActive.__build({ __raw }, builder),
-        buildBySelf: () => MemberActive.__build({ __raw }),
-      }));
+      .map((data) => new MemberActive(data));
   }
 
-  public static fromWithResolved(id: MemberId) {
-    const rawData = ResultAsync.combine([
+  public static fromWithResolved(id: MemberId): DatabaseResult<MemberActive<'WITH_RESOLVED'>> {
+    return ResultAsync.combine([
       Database.transformResult(
         client.memberActive.findUniqueOrThrow({
           where: { memberId: id },
@@ -137,30 +113,25 @@ export const __MemberActive = (<Mode extends ModelMode = 'DEFAULT'>(client: Pris
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
       .map(
         (
-          [__raw, { MemberActiveInternal, MemberActiveExternal, ...Member }],
-        ) => ({
-          __raw,
-          __rawResolved: { Member, MemberActiveInternal, MemberActiveExternal },
-        }),
+          [memberActive, { MemberActiveInternal, MemberActiveExternal, ...Member }],
+        ) => new MemberActive(
+          memberActive,
+          { Member, MemberActiveInternal, MemberActiveExternal },
+        ),
       );
-
-    return rawData.map(({ __raw, __rawResolved }) => ({
-      buildBy: (builder: ModelEntityOf<$Member>) => MemberActive.__build({ __raw, __rawResolved }, builder),
-      buildBySelf: () => MemberActive.__build({ __raw, __rawResolved }),
-    }));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {
     throw new Error('Method not implemented.');
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<MemberActive> {
+  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberActive> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(): DatabaseResult<void> {
+  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGen;
+}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
-export type $MemberActive<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __MemberActive<M>;
+export type $MemberActive<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberActive<M>;

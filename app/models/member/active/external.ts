@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -9,8 +9,7 @@ import type {
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
-import { includeKeys2select, isSelf, matchWithResolved } from '@/utils/model';
-import { err, ok } from 'neverthrow';
+import { includeKeys2select, matchWithResolved } from '@/utils/model';
 
 /// Metadata ///
 
@@ -42,19 +41,14 @@ interface SchemaResolvedRaw {
 
 interface SchemaResolved {
   _parent: {
-    Member: () => BuildModelResult<ModelEntityOf<$Member>>;
+    Member: () => ModelEntityOf<$Member>;
   };
 }
 
-type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
-type RawData = ModelRawData4build<ThisModel>;
-
 /// Model ///
 
-export const __MemberActiveExternal = (<Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveExternal implements ThisModel<Mode> {
+export const __MemberActiveExternal = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActiveExternal<Mode extends ModelMode = M> {
   public static __prisma = client;
-
   private dbError = Database.dbErrorWith(metadata);
 
   public __raw: SchemaRaw;
@@ -62,7 +56,7 @@ export const __MemberActiveExternal = (<Mode extends ModelMode = 'DEFAULT'>(clie
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  private constructor({ __raw, __rawResolved }: RawData, private builder?: ModelEntityOf<$Member>) {
+  public constructor(__raw: SchemaRaw, __rawResolved?: SchemaResolvedRaw) {
     this.__raw = __raw;
     this.data = {
       ...__raw,
@@ -74,7 +68,7 @@ export const __MemberActiveExternal = (<Mode extends ModelMode = 'DEFAULT'>(clie
       __rawResolved,
       (r) => ({
         _parent: {
-          Member: () => models.Member.__build({ __raw: r.Member }, builder),
+          Member: () => new models.Member(r.Member),
         },
       }),
     );
@@ -83,62 +77,41 @@ export const __MemberActiveExternal = (<Mode extends ModelMode = 'DEFAULT'>(clie
     this.dataResolved = dataResolved;
   }
 
-  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>>;
-  public static __build(rawData: { __raw: SchemaRaw; __rawResolved: SchemaResolvedRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
-  public static __build<M extends ModelMode>(rawData: RawData, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<M>> {
-    const Model = __MemberActiveExternal<M>(client);
-    if (isSelf(builder)) {
-      return ok(new Model(rawData));
-    }
-
-    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-    if (builder.data.securityRole !== 'OWNER') {
-      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
-    }
-
-    return ok(new Model(rawData, builder));
-  }
-
-  public static from(id: MemberId) {
+  public static from(id: MemberId): DatabaseResult<MemberActiveExternal<'DEFAULT'>> {
     return Database.transformResult(
       client.memberActiveExternal.findUniqueOrThrow({
         where: { memberId: id },
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => ({
-        buildBy: (builder: ModelEntityOf<$Member>) => MemberActiveExternal.__build({ __raw }, builder),
-        buildBySelf: () => MemberActiveExternal.__build({ __raw }),
-      }));
+      .map((data) => new MemberActiveExternal(data));
   }
 
-  public static fromWithResolved(id: MemberId) {
-    const rawData = Database.transformResult(
+  public static fromWithResolved(id: MemberId): DatabaseResult<MemberActiveExternal<'WITH_RESOLVED'>> {
+    return Database.transformResult(
       client.memberActiveExternal.findUniqueOrThrow({
         where: { memberId: id },
+        // TODO: `MemberBase` と `Member` を一緒に JOIN する書き方を考える.  一旦, 1:1 の `Member` だけ include.
         include: includeKeys2select(includeKeys),
       }),
     )
       .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(({ Member, ...__raw }) => ({ __raw, __rawResolved: { Member } }));
-
-    return rawData.map(({ __raw, __rawResolved }) => ({
-      buildBy: (builder: ModelEntityOf<$Member>) => MemberActiveExternal.__build({ __raw, __rawResolved }, builder),
-      buildBySelf: () => MemberActiveExternal.__build({ __raw, __rawResolved }),
-    }));
+      .map(({ Member, ...rest }) => new MemberActiveExternal(rest, { Member: Member! }));
   }
 
   public resolveRelation(): DatabaseResult<SchemaResolved> {
     throw new Error('Method not implemented.');
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<MemberActiveExternal> {
+  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberActiveExternal> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(): DatabaseResult<void> {
+  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-}) satisfies ModelGen;
 
-export type $MemberActiveExternal<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __MemberActiveExternal<M>;
+  public static hoge() { }
+}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+
+export type $MemberActiveExternal<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberActiveExternal<M>;

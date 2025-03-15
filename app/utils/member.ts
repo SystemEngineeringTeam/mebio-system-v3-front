@@ -1,9 +1,8 @@
-import type { $Member } from '@/models/member';
 import type { $MemberActive } from '@/models/member/active';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { $MemberAlumni } from '@/models/member/alumni';
-import type { BuildModelResult, ModelEntityOf, ModelSchemaRawOf } from '@/types/model';
+import type { ModelEntityOf, ModelSchemaRawOf } from '@/types/model';
 import type { PartialNullable } from '@/types/utils';
 import type { PrismaClient } from '@prisma/client';
 import { Database } from '@/services/database.server';
@@ -11,21 +10,21 @@ import { Database } from '@/services/database.server';
 export type MemberDetailActive =
   | {
     activeType: 'INTERNAL';
-    ActiveData: () => BuildModelResult<ModelEntityOf<$MemberActiveInternal>>;
+    ActiveData: () => ModelEntityOf<$MemberActiveInternal>;
   }
   | {
     activeType: 'EXTERNAL';
-    ActiveData: () => BuildModelResult<ModelEntityOf<$MemberActiveExternal>>;
+    ActiveData: () => ModelEntityOf<$MemberActiveExternal>;
   };
 
 export type MemberDetail =
   | {
     type: 'ACTIVE';
-    Data: () => BuildModelResult<ModelEntityOf<$MemberActive>>;
+    Data: () => ModelEntityOf<$MemberActive>;
   } & MemberDetailActive
   | {
     type: 'ALUMNI';
-    Data: () => BuildModelResult<ModelEntityOf<$MemberAlumni>>;
+    Data: () => ModelEntityOf<$MemberAlumni>;
   };
 
 export function toMemberDetailActive(
@@ -34,7 +33,6 @@ export function toMemberDetailActive(
     MemberActiveInternal: ModelSchemaRawOf<$MemberActiveInternal>;
     MemberActiveExternal: ModelSchemaRawOf<$MemberActiveExternal>;
   }>,
-  builder?: ModelEntityOf<$Member>,
 ): MemberDetailActive {
   const models = new Database(client).models;
   const { MemberActiveInternal: internal, MemberActiveExternal: external } = data;
@@ -46,14 +44,14 @@ export function toMemberDetailActive(
   if (internal != null) {
     return {
       activeType: 'INTERNAL',
-      ActiveData: () => models.member.active.Internal.__build({ __raw: internal }, builder),
+      ActiveData: () => new models.member.active.Internal(internal),
     } as const;
   }
 
   if (external != null) {
     return {
       activeType: 'EXTERNAL',
-      ActiveData: () => models.member.active.External.__build({ __raw: external }, builder),
+      ActiveData: () => new models.member.active.External(external),
     } as const;
   }
 
@@ -68,7 +66,6 @@ export function toMemberDetail(
     MemberActiveInternal: ModelSchemaRawOf<$MemberActiveInternal>;
     MemberActiveExternal: ModelSchemaRawOf<$MemberActiveExternal>;
   }>,
-  builder?: ModelEntityOf<$Member>,
 ): MemberDetail {
   const models = new Database(client).models;
   const { MemberAlumni, MemberActive, MemberActiveInternal, MemberActiveExternal } = data;
@@ -84,14 +81,14 @@ export function toMemberDetail(
   if (MemberAlumni != null) {
     return {
       type: 'ALUMNI',
-      Data: () => models.member.Alumni.__build({ __raw: MemberAlumni }, builder),
+      Data: () => new models.member.Alumni(MemberAlumni),
     } as const;
   }
 
   if (MemberActive != null) {
     return {
       type: 'ACTIVE',
-      Data: () => models.member.Active.__build({ __raw: MemberActive }, builder),
+      Data: () => new models.member.Active(MemberActive),
       ...toMemberDetailActive(client, { MemberActiveInternal, MemberActiveExternal }),
     } as const;
   }

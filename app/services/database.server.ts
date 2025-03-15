@@ -9,7 +9,6 @@ import { __MemberBase } from '@/models/member/base';
 import { __MemberSensitive } from '@/models/member/sensitive';
 import { __MemberStatus } from '@/models/member/status';
 import { __Payment } from '@/models/payment';
-import { __Snapshot } from '@/models/snapshot';
 import { clientKnownErrorCode, type DatabaseError, type DatabaseErrorDetail, type PrismaClientError } from '@/types/database';
 import { getEntries } from '@/utils';
 import { Prisma, type PrismaClient } from '@prisma/client';
@@ -34,7 +33,6 @@ export class Database {
         Alumni: __MemberAlumni(client),
       },
       Payment: __Payment(client),
-      Snapshot: __Snapshot(client),
     };
   }
 
@@ -49,10 +47,10 @@ export class Database {
         .returnType<{ message: string; hint?: string }>()
         .with(
           { type: 'PERMISSION_DENIED' },
-          ({ _raw: { builder } }) => (
+          ({ _raw: { operator } }) => (
             {
               message: 'この操作は許可されていません',
-              hint: `操作者 ${builder.data.id} の権限が不足しています`,
+              hint: `操作者 ${operator.data.id} の権限が不足しています`,
             }
           ),
         )

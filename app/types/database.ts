@@ -21,7 +21,7 @@ export type PrismaClientError =
 export type DatabaseErrorDetail =
   | {
     type: 'PERMISSION_DENIED';
-    _raw: { builder: ModelEntityOf<$Member> };
+    _raw: { operator: ModelEntityOf<$Member> };
   }
   | {
     type: keyof typeof clientKnownErrorCode | 'UNKNOWN_REQUEST_ERROR';
