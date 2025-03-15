@@ -1,12 +1,7 @@
 import authUserContext from '@/components/AuthContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Link } from '@remix-run/react';
+import AvatarMenu from '@/components/Header/AvatarMenu';
+import { Button } from '@/components/ui/button';
+import { Form, Link } from '@remix-run/react';
 import { useContext } from 'react';
 
 export default function Header() {
@@ -17,28 +12,13 @@ export default function Header() {
       <Link to="/">名簿システム</Link>
 
       <div className="ml-auto flex items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Avatar>
-              <AvatarImage src={user?.iconUrl} />
-              <AvatarFallback>{user?.name}</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent>
-            <DropdownMenuItem>
-              <Link to="/">トップへ</Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem>
-              <Link to="/member">プロフィール</Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem>
-              <Link to="/logout">ログアウト</Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {user
+          ? <AvatarMenu user={user} />
+          : (
+              <Form action="/auth/login" method="post">
+                <Button className="text-primary" size="sm" variant="outline">ログイン</Button>
+              </Form>
+            )}
       </div>
     </header>
   );
