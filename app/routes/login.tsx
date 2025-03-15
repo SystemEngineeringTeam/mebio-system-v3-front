@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
-import { Button, Text } from '@/components/basic';
 import { getAuthenticator } from '@/services/auth.server';
 import { redirect } from '@remix-run/cloudflare';
 import { Form } from '@remix-run/react';
@@ -27,10 +26,10 @@ const Centered = styled('div', {
 export default function LoginPage() {
   return (
     <Centered data-scrollable="false">
-      <Text bold>ログインしてください</Text>
+      <p>ログインしてください</p>
 
       <Form action="/auth/login" method="post">
-        <Button type="submit">Login with Google</Button>
+        <button type="submit">Login with Google</button>
       </Form>
     </Centered>
   );

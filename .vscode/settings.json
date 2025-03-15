@@ -46,5 +46,9 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  }
+  },
+  "cSpell.words": [
+    "destr",
+    "isbot"
+  ]
 }

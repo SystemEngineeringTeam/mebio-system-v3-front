@@ -1,9 +1,6 @@
 import type { AuthUser } from '@/services/auth.server';
-import type { MemberStatus } from '@/types/member';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
-import AuthUserContext from '@/components/AuthtContext';
-import Footer from '@/components/Footer';
-import Header from '@/components/Header';
+import AuthUserContext from '@/components/AuthContext';
 import GlobalStyles from '@/GlobalStyles';
 import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import { getAuthenticator } from '@/services/auth.server';
@@ -33,7 +30,7 @@ export function links() {
   ];
 }
 
-type LoaderData = MemberStatus & AuthUser | null;
+type LoaderData = AuthUser | null;
 
 export async function loader({ request, context }: LoaderFunctionArgs): Promise<LoaderData | Response> {
   const authenticator = getAuthenticator(context.cloudflare.env);
@@ -47,12 +44,21 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
     return null;
   }
 
-  const status: MemberStatus = {
-    isAdmin: true,
-    status: 'temporary',
-  };
+  // TODO: 自身のユーザー情報を取得し，返す
+  // const memberId = MemberId.from(user.id).match(
+  //   (id) => id,
+  //   () => {
+  //     throw new Response('不正な部員 ID です', { status: 400 });
+  //   },
+  // );
+  // const status = await __MemberStatus({} as PrismaClient).from(memberId).match(
+  //   (s) => s,
+  //   () => {
+  //     throw new Response('部員ステータスが取得できませんでした', { status: 500 });
+  //   },
+  // );
 
-  return { ...user, ...status };
+  return { ...user };
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -69,9 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <AuthUserContext value={user ?? null}>
           <GlobalStyles />
-          <Header />
           <main>{children}</main>
-          <Footer />
           <ScrollRestoration />
           <Scripts />
         </AuthUserContext>

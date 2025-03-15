@@ -1,4 +1,3 @@
-import { Text } from '@/components/basic';
 import { styled } from 'restyle';
 
 const Centered = styled('div', {
@@ -21,7 +20,7 @@ export default function ErrorPageBase({ title, message, children }: Props) {
   return (
     <Centered data-scrollable="false">
       <h1>{title}</h1>
-      <Text>{message}</Text>
+      <p>{message}</p>
       {children}
     </Centered>
   );

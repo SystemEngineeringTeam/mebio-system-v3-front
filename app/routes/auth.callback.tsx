@@ -22,9 +22,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const cookie = await commitSession(session, {
     expires: new Date(Date.now() + 600_000),
   });
-  const rediretOption = {
+  const redirectOption = {
     headers: { 'Set-Cookie': cookie },
   };
 
-  return redirect('/', rediretOption);
+  return redirect('/', redirectOption);
 };
