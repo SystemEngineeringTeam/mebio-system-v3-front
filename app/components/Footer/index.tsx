@@ -1,13 +1,7 @@
-// const FooterStyled = styled('footer', {
-//   padding: '5px',
-//   height: 'var(--footer-height)',
-//   color: 'var(--background-color)',
-//   backgroundColor: 'var(--on-background-color)',
-//   textAlign: 'center',
-// });
-
 export default function Footer() {
   return (
-    <footer className="p-5">SET © 2025 Copyright.</footer>
+    <footer className="flex h-[var(--footer-height)] items-center justify-center bg-primary">
+      <span className="text-lg text-primary-foreground">SET © 2025 Copyright.</span>
+    </footer>
   );
 }

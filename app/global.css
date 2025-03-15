@@ -17,6 +17,14 @@ body {
     padding: 0;
     box-sizing: border-box;
   }
+
+  main {
+    min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  }
+
+  main:has([data-scrollable="false"]) {
+    height: calc(100vh - var(--header-height) - var(--footer-height));
+  }
 }
 
 @layer base {
