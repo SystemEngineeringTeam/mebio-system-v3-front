@@ -1,7 +1,8 @@
 import type { AuthUser } from '@/services/auth.server';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import AuthUserContext from '@/components/AuthContext';
-import GlobalStyles from '@/GlobalStyles';
+import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import { getAuthenticator } from '@/services/auth.server';
 import {
@@ -14,6 +15,7 @@ import {
   useRouteError,
   useRouteLoaderData,
 } from '@remix-run/react';
+import './global.css';
 
 export function links() {
   return [
@@ -74,8 +76,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <AuthUserContext value={user ?? null}>
-          <GlobalStyles />
+          <Header />
           <main>{children}</main>
+          <Footer />
           <ScrollRestoration />
           <Scripts />
         </AuthUserContext>

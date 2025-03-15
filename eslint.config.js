@@ -1,4 +1,5 @@
 import antfu from '@antfu/eslint-config';
+import tailwind from 'eslint-plugin-tailwindcss';
 
 export default antfu({
   ignores: ['*.md', '*.json', '.github/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
@@ -67,4 +68,4 @@ export default antfu({
       'react-refresh/only-export-components': 'off',
     },
   },
-});
+}, ...tailwind.configs['flat/recommended']);
