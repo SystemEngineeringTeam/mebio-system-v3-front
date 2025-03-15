@@ -2,7 +2,7 @@ import antfu from '@antfu/eslint-config';
 import tailwind from 'eslint-plugin-tailwindcss';
 
 export default antfu({
-  ignores: ['*.md', '*.json', '.github/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
+  ignores: ['*.md', '*.json', '.github/**/*', '.vscode/**/*', 'wrangler.toml', 'worker-configuration.d.ts'],
   include: ['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.js', 'app/**/*.jsx', 'prisma/*.ts'],
   formatters: true,
   stylistic: {
