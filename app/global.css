@@ -18,6 +18,10 @@ body {
     box-sizing: border-box;
   }
 
+  body {
+    overflow-x: hidden;
+  }
+
   main {
     min-height: calc(100vh - var(--header-height) - var(--footer-height));
   }
