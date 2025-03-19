@@ -1,6 +1,6 @@
 import type { ModelMetadata } from '@/types/model';
 import type { PartialNullable } from '@/types/utils';
-import { __Member } from '@/models/member';
+import { $Member } from '@/models/member';
 import { __MemberActive } from '@/models/member/active';
 import { __MemberActiveExternal } from '@/models/member/active/external';
 import { __MemberActiveInternal } from '@/models/member/active/internal';
@@ -21,7 +21,7 @@ export class Database {
 
   public constructor(protected client: PrismaClient) {
     this.models = {
-      Member: __Member(client),
+      Member: $Member.with(client),
       member: {
         Status: __MemberStatus(client),
         Base: __MemberBase(client),

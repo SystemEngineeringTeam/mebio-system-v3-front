@@ -14,21 +14,16 @@ export interface ModelMetadata<
 }
 
 export type ModelMode = 'DEFAULT' | 'WITH_RESOLVED';
+export type ModelVariants = Record<ModelMode, any>;
 export type ModeWithDefault<Mode extends ModelMode, T> = Mode extends 'DEFAULT' ? T : never;
 export type ModeWithResolved<Mode extends ModelMode, T> = Mode extends 'WITH_RESOLVED' ? T : undefined;
 
 export type ModelResolver<
   Mode extends ModelMode,
   M extends AnyModel,
-  MR = Model<'WITH_RESOLVED', ExtractModelGen<M>>,
 > = ModeWithDefault<
   Mode,
-  DatabaseResult<
-    {
-      buildBy: (builder: M) => BuildModelResult<MR>;
-      buildBySelf: () => BuildModelResult<MR>;
-    }
-  >
+  ReturnType<ModelBuilder<M>['fromWithResolved']>
 >;
 
 export interface Model<
@@ -40,51 +35,67 @@ export interface Model<
   __rawResolved?: ModeWithResolved<Mode, ModelGen extends ModelGenerator<any, any, any, infer SR, any> ? SR : never>;
   dataResolved?: ModeWithResolved<Mode, ModelGen extends ModelGenerator<any, any, any, any, infer S> ? S : never>;
 
-  resolveRelation?: () => ModelResolver<Mode, any>;
+  resolveRelation?: () => any;
   update?: (...args: any[]) => DatabaseResult<AnyModel>;
   delete?: (...args: any[]) => DatabaseResult<void>;
 }
 
-export interface ModelRawData4build<M extends AnyModel> { __raw: ModelSchemaRawOf<M>; __rawResolved: Nullable<ModelSchemaResolvedRawOf<M>> }
+export type ModelNormalizer<
+  M extends AnyModel,
+> = (client: PrismaClient, builder: ModelBuilderType) => {
+  schema: (__raw: ModelSchemaRawOf<M>) => ModelSchemaOf<M>;
+  schemaResolved: (__rawResolved: ModelSchemaResolvedRawOf<M>) => ModelSchemaResolvedOf<M>;
+};
+
+export interface ModelRawData4build<M extends AnyModel<ModelMode>> { __raw: ModelSchemaRawOf<M>; __rawResolved: Nullable<ModelSchemaResolvedRawOf<M>> }
+
+export type ModelBuilderType =
+  | { type: 'ANONYMOUS' }
+  | { type: 'SELF' }
+  | { type: 'MEMBER'; member: $Member };
 export type BuildModelError =
-  | { type: 'PERMISSION_DENIED'; detail: { builder: $Member } };
+  | { type: 'PERMISSION_DENIED'; detail: { builder: any } };
 
 export type BuildModelResult<S> = Result<S, BuildModelError>;
 
+export type ModelUnwrappedInstances__DO_NOT_EXPOSE<
+  M extends AnyModel,
+  V extends ModelVariants = ExtractModelVariants<M>,
+> = (
+  rawData: ModelRawData4build<V['DEFAULT']>,
+  builder: ModelBuilderType,
+) => { default: V['DEFAULT']; withResolved: V['WITH_RESOLVED'] };
+
+export type ModelInstances<
+  M extends AnyModel,
+> = (
+  ...args: Parameters<ModelUnwrappedInstances__DO_NOT_EXPOSE<M>>
+) => BuildModelResult<ReturnType<ModelUnwrappedInstances__DO_NOT_EXPOSE<M>>>;
+
 export interface ModelBuilderInternal<
   M extends AnyModel,
-  MD = Model<'DEFAULT', ExtractModelGen<M>>,
-  MR = Model<'WITH_RESOLVED', ExtractModelGen<M>>,
 > {
-  __build: (
-    rawData: ModelRawData4build<M>,
-    builder: $Member
-  ) => BuildModelResult<{
-    default: MD;
-    withResolved: MR;
-  }>;
-  __buildBySelf: (
-    rawData: ModelRawData4build<M>
-  ) => BuildModelResult<{
-    default: MD;
-    withResolved: MR;
-  }>;
+  __with: ModelInstances<M>;
+  by: (rawData: ModelRawData4build<M>, memberAsBuilder: $Member) => ReturnType<ModelInstances<M>>;
+  bySelf: (rawData: ModelRawData4build<M>) => ReturnType<ModelInstances<M>>;
+  [key: string]: any;
 }
 
-export type ModelBuilder<
+export interface ModelBuilder<
   M extends AnyModel,
-  MD = Model<'DEFAULT', ExtractModelGen<M>>,
-  MR = Model<'WITH_RESOLVED', ExtractModelGen<M>>,
-> = ModelBuilderInternal<M> & {
+  V extends ModelVariants = ExtractModelVariants<M>,
+> {
+  __build: ModelBuilderInternal<M>;
   from: (...args: any[]) => DatabaseResult<{
-    buildBy: (builder: $Member) => BuildModelResult<MD>;
-    buildBySelf: () => BuildModelResult<MD>;
+    buildBy: (builder: $Member) => BuildModelResult<V['DEFAULT']>;
+    buildBySelf: () => BuildModelResult<V['DEFAULT']>;
   }>;
   fromWithResolved: (...args: any[]) => DatabaseResult<{
-    buildBy: (builder: $Member) => BuildModelResult<MR>;
-    buildBySelf: () => BuildModelResult<MR>;
+    buildBy: (builder: $Member) => BuildModelResult<V['WITH_RESOLVED']>;
+    buildBySelf: () => BuildModelResult<V['WITH_RESOLVED']>;
   }>;
-};
+  [key: string]: any;
+}
 
 /**
  * __M = (client) => M のときの M
@@ -100,21 +111,28 @@ export interface ModelGenerator<
 
   __prisma: PrismaClient;
 
-  with: <M extends AnyModel>(client: PrismaClient) => ModelBuilder<M>;
+  with: (client: PrismaClient) => any;
 }
 
 export type AnyModelGenerator = ModelGenerator<ModelMetadata<any, 'CATCH_ALL'>, any, any, any, any>;
-export type AnyModel = Model<any, AnyModelGenerator>;
+export type AnyModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, AnyModelGenerator>;
 
 /**
- * Model からファントムプロパティー `__struct` を抽出
+ * Model からファントムプロパティー `__struct` / `__variants` を抽出
  */
-type ExtractModelStruct<T>
+export type ExtractModelStruct<T>
   = T extends AnyModel & { __struct: infer S }
     ? S
     : never;
 
-type ExtractModelGen<T>
+export type ExtractModelVariants<T>
+  = T extends AnyModel & { __variants: infer V }
+    ? V extends ModelVariants
+      ? V
+      : never
+    : never;
+
+export type ExtractModelGen<T>
   = T extends Model<any, infer G>
     ? G
     : never;

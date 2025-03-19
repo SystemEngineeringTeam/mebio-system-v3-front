@@ -1,13 +1,6 @@
-import type { $MemberActive } from '@/models/member/active';
-import type { $MemberActiveExternal } from '@/models/member/active/external';
-import type { $MemberActiveInternal } from '@/models/member/active/internal';
-import type { $MemberAlumni } from '@/models/member/alumni';
-import type { $MemberBase } from '@/models/member/base';
-import type { $MemberSensitive } from '@/models/member/sensitive';
-import type { $MemberStatus } from '@/models/member/status';
 import type { $Payment } from '@/models/payment';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
 import type { MemberDetail } from '@/utils/member';
 import type {
@@ -17,9 +10,9 @@ import type {
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
-import { toMemberDetail } from '@/utils/member';
-import { includeKeys2select, matchWithDefault, matchWithResolved } from '@/utils/model';
+import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, separateRawData } from '@/utils/model';
 import { err, ok } from 'neverthrow';
+import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -104,10 +97,46 @@ interface SchemaResolved {
   };
 }
 
+/// ModelTypes ///
+
 type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
 type ThisModel<M extends ModelMode = 'DEFAULT'> = $Member<M>;
+interface ThisModelVariants {
+  DEFAULT: ThisModel;
+  WITH_RESOLVED: ThisModel<'WITH_RESOLVED'>;
+}
 type RawData = ModelRawData4build<ThisModel>;
+
+/// Normalizer ///
+
+const normalizer = ((client, builder) => ({
+  schema: (__raw) => ({
+    ...__raw,
+    id: MemberId.from(__raw.id)._unsafeUnwrap(),
+    subject: Subject.from(__raw.subject),
+    securityRole: zSecurityRoles.parse(__raw.securityRole),
+  }),
+  schemaResolved: (__rawResolved) => ({
+    _referenced: {
+      paymentsAs: {
+        Payer: () => __rawResolved.PaymentAsPayer.map((__raw) => $Payment.__build<'DEFAULT'>({ __raw })),
+        Receiver: () => __rawResolved.PaymentAsReceiver.map((__raw) => $Payment.__build({ __raw })),
+        Approver: () => __rawResolved.PaymentAsApprover.map((__raw) => $Payment.__build({ __raw })),
+      },
+      memberStatusAsUpdaterTo: {
+        HasDeleted: () => __rawResolved.MemberStatusAsUpdaterToHasDeleted.map((__raw) => $MemberStatus.__build({ __raw })),
+        LastRenewalDate: () => __rawResolved.MemberStatusAsUpdaterToLastRenewalDate.map((__raw) => $MemberStatus.__build({ __raw })),
+      },
+    },
+    member: {
+      Base: () => $MemberBase.__build({ __raw: __rawResolved.MemberBase }),
+      Status: () => $MemberStatus.__build({ __raw: __rawResolved.MemberStatus }),
+      Sensitive: () => $MemberSensitive.__build({ __raw: __rawResolved.MemberSensitive }),
+      detail: toMemberDetail(client, { MemberAlumni: __rawResolved.MemberAlumni, MemberActive: __rawResolved.MemberActive, MemberActiveExternal: __rawResolved.MemberActiveExternal, MemberActiveInternal: __rawResolved.MemberActiveInternal }),
+    },
+  }),
+})) satisfies ModelNormalizer<ThisModel>;
 
 /// Model ///
 
@@ -115,6 +144,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
   private dbError = Database.dbErrorWith(metadata);
   private client;
   public declare __struct: ThisModelImpl<Mode>;
+  public declare __variants: ThisModelVariants;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -124,66 +154,45 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
   private constructor(
     public __prisma: PrismaClient,
     { __raw, __rawResolved }: RawData,
-    private builder?: ThisModel,
+    private builder: ModelBuilderType,
   ) {
+    const n = normalizer(__prisma, this.builder);
+
     this.__raw = __raw;
-    this.data = {
-      ...__raw,
-      id: MemberId.from(__raw.id)._unsafeUnwrap(),
-      subject: Subject.from(__raw.subject),
-      securityRole: zSecurityRoles.parse(__raw.securityRole),
-    };
-
-    const { models } = new Database(__prisma);
-    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
-      __rawResolved,
-      (r) => ({
-        _referenced: {
-          paymentsAs: {
-            Payer: () => r.PaymentAsPayer.map((__raw) => models.Payment.__build<'DEFAULT'>({ __raw }, builder)),
-            Receiver: () => r.PaymentAsReceiver.map((__raw) => models.Payment.__build({ __raw }, builder)),
-            Approver: () => r.PaymentAsApprover.map((__raw) => models.Payment.__build({ __raw }, builder)),
-          },
-          memberStatusAsUpdaterTo: {
-            HasDeleted: () => r.MemberStatusAsUpdaterToHasDeleted.map((__raw) => models.member.Status.__build({ __raw }, builder)),
-            LastRenewalDate: () => r.MemberStatusAsUpdaterToLastRenewalDate.map((__raw) => models.member.Status.__build({ __raw }, builder)),
-          },
-        },
-        member: {
-          Base: () => models.member.Base.__build({ __raw: r.MemberBase }, builder),
-          Status: () => models.member.Status.__build({ __raw: r.MemberStatus }, builder),
-          Sensitive: () => models.member.Sensitive.__build({ __raw: r.MemberSensitive }, builder),
-          detail: toMemberDetail(client, { MemberAlumni: r.MemberAlumni, MemberActive: r.MemberActive, MemberActiveExternal: r.MemberActiveExternal, MemberActiveInternal: r.MemberActiveInternal }, builder),
-        },
-      }),
-    );
-
+    this.data = n.schema(__raw);
+    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, n.schemaResolved);
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
     this.client = __prisma;
   }
 
-  public static with(client: PrismaClient) {
-    const internal = {
-      __build: (rawData, builder) => {
-        // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-        if (builder.data.securityRole !== 'OWNER') {
-          return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
-        }
+  public static with(client: PrismaClient): ModelBuilder<ThisModel> {
+    const __toUnwrappedInstances = ((rawData, builder) => ({
+      default: new $Member(client, rawData, builder),
+      withResolved: new $Member<'WITH_RESOLVED'>(client, rawData, builder),
+    })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
-        return ok({
-          default: new $Member(client, rawData, builder),
-          withResolved: new $Member<'WITH_RESOLVED'>(client, rawData, builder),
-        });
-      },
-      __buildBySelf: (rawData) => ok({
-        default: new $Member(client, rawData),
-        withResolved: new $Member<'WITH_RESOLVED'>(client, rawData),
-      }),
+    const toInstances = ((rawData, builder) => match(builder)
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .with({ type: 'MEMBER' }, ({ member }) => {
+        // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
+        if (member.data.securityRole !== 'OWNER') {
+          return err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const);
+        }
+        return ok(__toUnwrappedInstances(rawData, builder));
+      })
+      .exhaustive()
+    ) satisfies ModelInstances<ThisModel>;
+
+    const __build = {
+      __with: toInstances,
+      by: (rawData, memberAsBuilder) => toInstances(rawData, { type: 'MEMBER', member: memberAsBuilder }),
+      bySelf: (rawData) => toInstances(rawData, { type: 'SELF' }),
     } satisfies ModelBuilderInternal<ThisModel>;
 
     return {
-      ...internal,
+      __build,
       from: (id: MemberId) => {
         const rawData = Database.transformResult(
           client.member.findUniqueOrThrow({
@@ -191,14 +200,10 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
           }),
         )
           .mapErr(Database.dbErrorWith(metadata).transform('from'))
-          .map((__raw) => ({ __raw }));
+          .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
 
-        return rawData.map(({ __raw }) => ({
-          buildBy: (builder) => internal.__build({ __raw, __rawResolved: undefined }, builder).map((m) => m.default),
-          buildBySelf: () => internal.__buildBySelf({ __raw, __rawResolved: undefined }).map((m) => m.default),
-        }));
+        return rawData.map(buildRawData(__build).default);
       },
-
       fromWithResolved: (id: MemberId) => {
         const rawData = Database.transformResult(
           client.member.findUniqueOrThrow({
@@ -207,49 +212,17 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
           }),
         )
           .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-          .map(
-            (
-              { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...__raw },
-            ) => ({
-              __raw,
-              __rawResolved: { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-            }),
-          );
+          .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
 
-        return rawData.map(({ __raw, __rawResolved }) => ({
-          buildBy: (builder: ThisModel) => internal.__build({ __raw, __rawResolved }, builder).map((m) => m.withResolved),
-          buildBySelf: () => internal.__buildBySelf({ __raw, __rawResolved }).map((m) => m.withResolved),
-        }));
+        return rawData.map(buildRawData(__build).withResolved);
       },
-    } satisfies ModelBuilder<ThisModel>;
+    };
   }
 
   public resolveRelation(): ModelResolver<Mode, ThisModel> {
     return matchWithDefault(
       this.__rawResolved,
-      () => {
-        const rawData = Database.transformResult(
-          this.client.member.findUniqueOrThrow({
-            where: { id: this.data.id },
-            include: includeKeys2select(includeKeys),
-          }),
-        )
-          .mapErr(this.dbError.transform('resolveRelation'))
-          .map(
-            (
-              { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...__raw },
-            ) => ({
-              __raw,
-              __rawResolved: { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-            }),
-          );
-
-        const { __build, __buildBySelf } = $Member.with(this.client);
-        return rawData.map(({ __raw, __rawResolved }) => ({
-          buildBy: (builder: ThisModel) => __build({ __raw, __rawResolved }, builder).map((m) => m.withResolved),
-          buildBySelf: () => __buildBySelf({ __raw, __rawResolved }).map((m) => m.withResolved),
-        }));
-      },
+      () => $Member.with(this.client).fromWithResolved(this.data.id),
     );
   }
 
@@ -262,11 +235,4 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
   }
 
   public hoge() { }
-}
-
-{
-  const Member = $Member.with({} as PrismaClient);
-  const member = (await Member.from(''))._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
-  const _m = (await member.resolveRelation())._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
-  const a = (await _m.resolveRelation())._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
 }
