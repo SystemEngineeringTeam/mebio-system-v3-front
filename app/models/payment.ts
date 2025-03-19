@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildImplicit, BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { Brand, Nullable, Override } from '@/types/utils';
 import type {
   Prisma,
@@ -10,15 +10,16 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
-import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, separateRawData } from '@/utils/model';
+import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
 import { err, ok } from 'neverthrow';
+import { match } from 'ts-pattern';
 
 /// Metadata ///
 
 const metadata = {
   displayName: '支払い',
   modelName: 'payment',
-  primaryKeyName: 'id',
+  primaryKeyName: 'payerId',
 } as const satisfies ModelMetadata<'payment'>;
 
 /// Custom Types ///
@@ -57,78 +58,38 @@ interface SchemaResolved {
   };
 }
 
-/// Model Types ///
+/// ModelTypes ///
 
 type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
 type ThisModel<M extends ModelMode = 'DEFAULT'> = $Payment<M>;
+interface ThisModelVariants {
+  DEFAULT: ThisModel;
+  WITH_RESOLVED: ThisModel<'WITH_RESOLVED'>;
+}
 type RawData = ModelRawData4build<ThisModel>;
 
 /// Normalizer ///
 
-// function normalizeSchemaResolved(client: PrismaClient, builder: $Member) {
-//   const { models } = new Database(client);
-//   const isSelf = builder == null;
-
-//   return ({ MemberAsPayer, MemberAsReceiver, MemberAsApprover }: SchemaResolvedRaw): SchemaResolved => ({
-//     member: {
-//       Payer: () => {
-//         const rawData = { __raw: MemberAsPayer, __rawResolved: undefined };
-//         return models.Member.__build.__implicit(rawData, builder).default;
-//       },
-//       Receiver: () => {
-//         const rawData = { __raw: MemberAsReceiver, __rawResolved: undefined };
-//         return isSelf
-//           ? models.Member.__builder.buildBySelf(rawData).map((m) => m.default)
-//           : models.Member.__builder.build(rawData, builder).map((m) => m.default);
-//       },
-//       Approver: () => {
-//         if (MemberAsApprover == null) {
-//           return null;
-//         }
-
-//         const rawData = { __raw: MemberAsApprover, __rawResolved: undefined };
-//         return builder == null
-//           ? models.Member.__builder.buildBySelf(rawData).map((m) => m.default)
-//           : models.Member.__builder.build(rawData, builder).map((m) => m.default);
-//       },
-//     },
-//   });
-// }
-
 const normalizer = ((client, builder) => ({
-  schema: (__raw: SchemaRaw) => ({
+  schema: (__raw) => ({
     ...__raw,
     id: PaymentId.from(__raw.id)._unsafeUnwrap(),
     payerId: MemberId.from(__raw.payerId)._unsafeUnwrap(),
     receiverId: MemberId.from(__raw.receiverId)._unsafeUnwrap(),
     approverId: __raw.approverId != null ? MemberId.from(__raw.approverId)._unsafeUnwrap() : null,
   }),
-  schemaResolved: (__rawResolved: SchemaResolvedRaw) => {
+  schemaResolved: (__rawResolved) => {
     const { models } = new Database(client);
     const { MemberAsPayer, MemberAsReceiver, MemberAsApprover } = __rawResolved;
+
     return {
       member: {
-        Payer: () => {
-          const rawData = buildRawData(models.Member.__build).default(MemberAsPayer);
-          return models.Member.__build.__implicit(rawData, builder).default;
-        },
-        Receiver: () => {
-          const rawData = { __raw: MemberAsReceiver, __rawResolved: undefined };
-          return isSelf
-            ? models.Member.__builder.buildBySelf(rawData).map((m) => m.default)
-            : models.Member.__builder.build(rawData, builder).map((m) => m.default);
-        },
-        Approver: () => {
-          if (MemberAsApprover == null) {
-            return null;
-          }
-
-          const rawData = { __raw: MemberAsApprover, __rawResolved: undefined };
-          return builder == null
-            ? models.Member.__builder.buildBySelf(rawData).map((m) => m.default)
-            : models.Member.__builder.build(rawData, builder).map((m) => m.default);
-        },
+        Payer: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsPayer)).build(builder),
+        Receiver: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsReceiver)).build(builder),
+        Approver: () => MemberAsApprover != null
+          ? buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsApprover)).build(builder)
+          : null,
       },
     };
   },
@@ -140,6 +101,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
   private dbError = Database.dbErrorWith(metadata);
   private client;
   public declare __struct: ThisModelImpl<Mode>;
+  public declare __variants: ThisModelVariants;
 
   public __raw: SchemaRaw;
   public data: Schema;
@@ -151,32 +113,34 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
     { __raw, __rawResolved }: RawData,
     private builder: ModelBuilderType,
   ) {
+    const n = normalizer(__prisma, this.builder);
+
     this.__raw = __raw;
-    this.data = normalizeSchema(__raw);
-    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, normalizeSchemaResolved(__prisma));
+    this.data = n.schema(__raw);
+    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, n.schemaResolved);
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
     this.client = __prisma;
   }
 
-  public static with(client: PrismaClient) {
-    const __implicit = ((rawData, builder) => ({
+  public static with(client: PrismaClient): ModelBuilder<ThisModel> {
+    const __toUnwrappedInstances = ((rawData, builder) => ({
       default: new $Payment(client, rawData, builder),
       withResolved: new $Payment<'WITH_RESOLVED'>(client, rawData, builder),
-    })) satisfies BuildImplicit<ThisModel>;
+    })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
+
+    const toInstances = ((rawData, builder) => match(builder)
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .exhaustive()
+    ) satisfies ModelInstances<ThisModel>;
 
     const __build = {
-      __implicit,
-      by: (rawData, memberAsBuilder) => {
-        // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-        if (memberAsBuilder.data.securityRole !== 'OWNER') {
-          return err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const);
-        }
-
-        return ok(__implicit(rawData, { type: 'MEMBER', member: memberAsBuilder }));
-      },
-      bySelf: (rawData) => ok(__implicit(rawData, { type: 'SELF' })),
-    } satisfies ModelBuilderInternal<ThisModel, ThisModel<'DEFAULT'>, ThisModel<'WITH_RESOLVED'>>;
+      __with: toInstances,
+      by: (rawData, memberAsBuilder) => toInstances(rawData, { type: 'MEMBER', member: memberAsBuilder }),
+      bySelf: (rawData) => toInstances(rawData, { type: 'SELF' }),
+    } satisfies ModelBuilderInternal<ThisModel>;
 
     return {
       __build,
@@ -191,7 +155,6 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
         return rawData.map(buildRawData(__build).default);
       },
-
       fromWithResolved: (id: PaymentId) => {
         const rawData = Database.transformResult(
           client.payment.findUniqueOrThrow({
@@ -204,7 +167,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
         return rawData.map(buildRawData(__build).withResolved);
       },
-    } satisfies ModelBuilder<ThisModel>;
+    };
   }
 
   public resolveRelation(): ModelResolver<Mode, ThisModel> {

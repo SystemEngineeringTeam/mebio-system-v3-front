@@ -10,7 +10,7 @@ import type {
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
-import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, separateRawData } from '@/utils/model';
+import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
@@ -80,19 +80,19 @@ interface SchemaResolvedRaw {
 interface SchemaResolved {
   _referenced: {
     paymentsAs: {
-      Payer: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
-      Receiver: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
-      Approver: () => Array<BuildModelResult<ModelEntityOf<$Payment>>>;
+      Payer: () => Array<BuildModelResult<$Payment>>;
+      Receiver: () => Array<BuildModelResult<$Payment>>;
+      Approver: () => Array<BuildModelResult<$Payment>>;
     };
     memberStatusAsUpdaterTo: {
-      HasDeleted: () => Array<BuildModelResult<ModelEntityOf<$MemberStatus>>>;
-      LastRenewalDate: () => Array<BuildModelResult<ModelEntityOf<$MemberStatus>>>;
+      HasDeleted: () => Array<BuildModelResult<$MemberStatus>>;
+      LastRenewalDate: () => Array<BuildModelResult<$MemberStatus>>;
     };
   };
   member: {
-    Status: () => BuildModelResult<ModelEntityOf<$MemberStatus>>;
-    Base: () => BuildModelResult<ModelEntityOf<$MemberBase>>;
-    Sensitive: () => BuildModelResult<ModelEntityOf<$MemberSensitive>>;
+    Status: () => BuildModelResult<$MemberStatus>;
+    Base: () => BuildModelResult<$MemberBase>;
+    Sensitive: () => BuildModelResult<$MemberSensitive>;
     detail: MemberDetail;
   };
 }
@@ -117,25 +117,22 @@ const normalizer = ((client, builder) => ({
     subject: Subject.from(__raw.subject),
     securityRole: zSecurityRoles.parse(__raw.securityRole),
   }),
-  schemaResolved: (__rawResolved) => ({
-    _referenced: {
-      paymentsAs: {
-        Payer: () => __rawResolved.PaymentAsPayer.map((__raw) => $Payment.__build<'DEFAULT'>({ __raw })),
-        Receiver: () => __rawResolved.PaymentAsReceiver.map((__raw) => $Payment.__build({ __raw })),
-        Approver: () => __rawResolved.PaymentAsApprover.map((__raw) => $Payment.__build({ __raw })),
+  schemaResolved: (__rawResolved) => {
+    const { models } = new Database(client);
+    const { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover } = __rawResolved;
+
+    return {
+      _referenced: {
+        paymentsAs: {
+          Payer: () => PaymentAsPayer.map((raw) => buildRawData(models.Payment.__build).default(schemaRaw2rawData<$Payment>(raw)).build(builder)),
+          Receiver: () => PaymentAsReceiver.map((raw) => buildRawData(models.Payment.__build).default(schemaRaw2rawData<$Payment>(raw)).build(builder)),
+          Approver: () => PaymentAsApprover.map((raw) => buildRawData(models.Payment.__build).default(schemaRaw2rawData<$Payment>(raw)).build(builder)),
+        },
+        memberStatusAsUpdaterTo: {
+        },
       },
-      memberStatusAsUpdaterTo: {
-        HasDeleted: () => __rawResolved.MemberStatusAsUpdaterToHasDeleted.map((__raw) => $MemberStatus.__build({ __raw })),
-        LastRenewalDate: () => __rawResolved.MemberStatusAsUpdaterToLastRenewalDate.map((__raw) => $MemberStatus.__build({ __raw })),
-      },
-    },
-    member: {
-      Base: () => $MemberBase.__build({ __raw: __rawResolved.MemberBase }),
-      Status: () => $MemberStatus.__build({ __raw: __rawResolved.MemberStatus }),
-      Sensitive: () => $MemberSensitive.__build({ __raw: __rawResolved.MemberSensitive }),
-      detail: toMemberDetail(client, { MemberAlumni: __rawResolved.MemberAlumni, MemberActive: __rawResolved.MemberActive, MemberActiveExternal: __rawResolved.MemberActiveExternal, MemberActiveInternal: __rawResolved.MemberActiveInternal }),
-    },
-  }),
+    };
+  },
 })) satisfies ModelNormalizer<ThisModel>;
 
 /// Model ///

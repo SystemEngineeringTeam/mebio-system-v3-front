@@ -34,10 +34,6 @@ export function matchWithDefault<Mode extends ModelMode, R, D>(
   }
 }
 
-export function isSelf(builder: Nullable<$Member>): builder is Nullable<$Member> {
-  return builder == null;
-}
-
 export function separateRawData<
   M extends AnyModel,
   IncludeKey extends string,
@@ -83,5 +79,14 @@ export function buildRawData<
       buildBy: (memberAsBuilder: $Member) => builderInternal.by(rawData, memberAsBuilder).map((m) => m.withResolved),
       buildBySelf: () => builderInternal.bySelf(rawData).map((m) => m.withResolved),
     }),
+  };
+}
+
+export function schemaRaw2rawData<M extends AnyModel>(
+  __raw: ModelSchemaRawOf<M>,
+) {
+  return {
+    __raw,
+    __rawResolved: undefined,
   };
 }

@@ -8,7 +8,7 @@ import { __MemberAlumni } from '@/models/member/alumni';
 import { __MemberBase } from '@/models/member/base';
 import { __MemberSensitive } from '@/models/member/sensitive';
 import { __MemberStatus } from '@/models/member/status';
-import { __Payment } from '@/models/payment';
+import { $Payment } from '@/models/payment';
 import { __Snapshot } from '@/models/snapshot';
 import { clientKnownErrorCode, type DatabaseError, type DatabaseErrorDetail, type PrismaClientError } from '@/types/database';
 import { getEntries } from '@/utils';
@@ -33,7 +33,7 @@ export class Database {
         },
         Alumni: __MemberAlumni(client),
       },
-      Payment: __Payment(client),
+      Payment: $Payment.with(client),
       Snapshot: __Snapshot(client),
     };
   }
