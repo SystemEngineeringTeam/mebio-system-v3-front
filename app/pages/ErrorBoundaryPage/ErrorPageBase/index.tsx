@@ -6,7 +6,7 @@ interface Props {
 
 export default function ErrorPageBase({ title, message, children }: Props) {
   return (
-    <div data-scrollable="false" className="flex flex-col items-center justify-center h-full">  
+    <div className="flex h-full flex-col items-center justify-center" data-scrollable="false">
       <h1 className="text-5xl font-bold">{title}</h1>
       <p>{message}</p>
       {children}
