@@ -25,7 +25,8 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const member = await Member
     // そのモデルの主キーからモデルを取得する (全モデル共通)
     .from(memberId)
-    .map((m) => m.buildBySelf())
+    // 取得したモデルを, `buildBySelf` でビルドする. (ここでのエラーは `match` でキャッチされる)
+    .andThen((m) => m.buildBySelf())
     // これもエラー起きるかもなので...
     .match(
       // OK のとき. そのまま返しても, ここで加工してもおｋ
@@ -49,7 +50,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
   */
 
-  return { member: member._unsafeUnwrap().data };
+  return { member };
 }
 
 export default function Index() {
@@ -59,7 +60,7 @@ export default function Index() {
     <div>
       <div>test</div>
       <textarea
-        className='bg-gray-100 border-2 border-gray-300 rounded-md p-2'
+        className="rounded-md border-2 border-gray-300 bg-gray-100 p-2"
         defaultValue={JSON.stringify(member, null, 2)}
         style={{
           width: '100%',

@@ -123,8 +123,9 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
       withResolved: new $MemberStatus<'WITH_RESOLVED'>(client, rawData, builder),
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
+    const buildErr = Database.dbErrorWith(metadata).transformBuildModel('toInstances');
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const)))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -144,7 +145,7 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
             where: { memberId },
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('from'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('from'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
 
         return rawData.map(buildRawData(__build).default);
@@ -156,7 +157,7 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromWithResolved'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
 
         return rawData.map(buildRawData(__build).withResolved);
@@ -165,7 +166,7 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
         const rawDataList = Database.transformResult(
           client.memberStatus.findMany(args),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
 
         return rawDataList.map((ms) => ({
@@ -181,7 +182,7 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchManyWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchManyWithResolved'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved));
 
         return rawDataList.map((ms) => ({
@@ -204,7 +205,7 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
     return Database.transformResult(
       this.client.memberStatus.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
     )
-      .mapErr(this.dbError.transform('update'))
+      .mapErr(this.dbError.transformPrismaBridge('update'))
       .map((r) => buildRawData($MemberStatus.with(this.client).__build).default(schemaRaw2rawData<$MemberStatus>(r)))
       .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
@@ -213,7 +214,7 @@ export class $MemberStatus<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
     return Database.transformResult(
       this.client.memberStatus.delete({ where: { memberId: this.data.memberId } }),
     )
-      .mapErr(this.dbError.transform('delete'))
+      .mapErr(this.dbError.transformPrismaBridge('delete'))
       .map(() => undefined);
   }
 

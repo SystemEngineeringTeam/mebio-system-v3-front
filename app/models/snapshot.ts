@@ -98,8 +98,9 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
       withResolved: new $Snapshot<'WITH_RESOLVED'>(client, rawData, builder),
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
+    const buildErr = Database.dbErrorWith(metadata).transformBuildModel('toInstances');
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const)))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -119,7 +120,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
             where: { id },
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('from'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('from'))
           .map((data) => ({ __raw: data, __rawResolved: undefined }));
 
         return rawData.map(buildRawData(__build).default);
@@ -128,7 +129,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
         const rawDataList = Database.transformResult(
           client.snapshot.findMany(args),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
           .map((r) => r.map((data) => ({ __raw: data, __rawResolved: undefined })));
 
         return rawDataList.map((ms) => ({
@@ -150,7 +151,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
         where: { id: this.data.id },
       }),
     )
-      .mapErr(this.dbError.transform('update'))
+      .mapErr(this.dbError.transformPrismaBridge('update'))
       .map((r) => buildRawData($Snapshot.with(this.client).__build).default(schemaRaw2rawData<$Snapshot>(r)))
       .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
@@ -159,7 +160,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
     return Database.transformResult(
       this.client.snapshot.delete({ where: { id: this.data.id } }),
     )
-      .mapErr(this.dbError.transform('delete'))
+      .mapErr(this.dbError.transformPrismaBridge('delete'))
       .map(() => undefined);
   }
 

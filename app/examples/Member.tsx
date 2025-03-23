@@ -36,7 +36,6 @@ function MemberCardInfo({
   );
 }
 
-// @ts-expect-error: non-used
 function MemberCard(
   Member: $Member, // ← 部員自身の操作が必要なので, `$Member` を使う.
 ): ReactElement {
@@ -75,7 +74,6 @@ function MemberCard(
   );
 }
 
-// @ts-expect-error: non-used
 async function fakeLoader({ context }: LoaderFunctionArgs) {
   const { Member } = context.db.models;
 

@@ -118,8 +118,9 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
       withResolved: new $MemberSensitive<'WITH_RESOLVED'>(client, rawData, builder),
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
+    const buildErr = Database.dbErrorWith(metadata).transformBuildModel('toInstances');
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const)))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -139,7 +140,7 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
             where: { memberId },
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('from'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('from'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
 
         return rawData.map(buildRawData(__build).default);
@@ -151,7 +152,7 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromWithResolved'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
 
         return rawData.map(buildRawData(__build).withResolved);
@@ -160,7 +161,7 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
         const rawDataList = Database.transformResult(
           client.memberSensitive.findMany(args),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
 
         return rawDataList.map((ms) => ({
@@ -176,7 +177,7 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchManyWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchManyWithResolved'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved));
 
         return rawDataList.map((ms) => ({
@@ -199,7 +200,7 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
     return Database.transformResult(
       this.client.memberSensitive.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
     )
-      .mapErr(this.dbError.transform('update'))
+      .mapErr(this.dbError.transformPrismaBridge('update'))
       .map((r) => buildRawData($MemberSensitive.with(this.client).__build).default(schemaRaw2rawData<$MemberSensitive>(r)))
       .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
@@ -208,7 +209,7 @@ export class $MemberSensitive<Mode extends ModelMode = 'DEFAULT'> implements Thi
     return Database.transformResult(
       this.client.memberSensitive.delete({ where: { memberId: this.data.memberId } }),
     )
-      .mapErr(this.dbError.transform('delete'))
+      .mapErr(this.dbError.transformPrismaBridge('delete'))
       .map(() => undefined);
   }
 

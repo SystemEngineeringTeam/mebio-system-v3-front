@@ -106,7 +106,8 @@ describe('部員モデル', () => {
 
       expect(rMember.isErr()).toBe(true);
       if (rMember.isErr()) {
-        expect(rMember.error.type).toBe('NO_ROWS_FOUND');
+        expect(rMember.error.error.type).toBe('PRISMA_BRIDGE_ERROR');
+        expect(rMember.error.error.detail.type).toBe('NO_ROWS_FOUND');
       }
     });
 
@@ -122,7 +123,8 @@ describe('部員モデル', () => {
 
       expect(rMember.isErr()).toBe(true);
       if (rMember.isErr()) {
-        expect(rMember.error.type).toBe('PERMISSION_DENIED');
+        expect(rMember.error.error.type).toBe('MODEL_BUILD_ERROR');
+        expect(rMember.error.error.detail.type).toBe('PERMISSION_DENIED');
       }
     });
   });
@@ -165,7 +167,8 @@ describe('部員モデル', () => {
       const rMember = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf());
       expect(rMember.isErr()).toBe(true);
       if (rMember.isErr()) {
-        expect(rMember.error.type).toBe('NO_ROWS_FOUND');
+        expect(rMember.error.error.type).toBe('PRISMA_BRIDGE_ERROR');
+        expect(rMember.error.error.detail.type).toBe('NO_ROWS_FOUND');
       }
     });
   });

@@ -184,13 +184,14 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
       withResolved: new $Member<'WITH_RESOLVED'>(client, rawData, builder),
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
+    const buildErr = Database.dbErrorWith(metadata).transformBuildModel('toInstances');
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const)))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, ({ member }) => {
         // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-        if (member.data.securityRole !== 'OWNER') {
-          return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
+        if (SECURITY_ROLE.indexOf(member.data.securityRole) >= SECURITY_ROLE.indexOf('MEMBER')) {
+          return err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const));
         }
         return ok(__toUnwrappedInstances(rawData, builder));
       })
@@ -211,7 +212,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
             where: { id },
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('from'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('from'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
 
         return rawData.map(buildRawData(__build).default);
@@ -223,7 +224,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromWithResolved'))
           // FIXME: もっと良い書き方あるかも
           .map(({ MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, ...rest }) => {
             // NOTE: Nullable になりうる値は, Prisma の `Member` モデルに関連する 1:1 のスキーマ定義を参考のこと.
@@ -246,7 +247,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
         const rawDataList = Database.transformResult(
           client.member.findMany(args),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
 
         return rawDataList.map((ms) => ({
@@ -269,7 +270,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
     return Database.transformResult(
       this.client.member.update({ data, where: { id: this.data.id } }),
     )
-      .mapErr(this.dbError.transform('update'))
+      .mapErr(this.dbError.transformPrismaBridge('update'))
       .map((r) => buildRawData($Member.with(this.client).__build).default(schemaRaw2rawData<$Member>(r)))
       .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
@@ -278,7 +279,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
     return Database.transformResult(
       this.client.member.delete({ where: { id: this.data.id } }),
     )
-      .mapErr(this.dbError.transform('delete'))
+      .mapErr(this.dbError.transformPrismaBridge('delete'))
       .map(() => undefined);
   }
 

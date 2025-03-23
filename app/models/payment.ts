@@ -129,8 +129,9 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
       withResolved: new $Payment<'WITH_RESOLVED'>(client, rawData, builder),
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
+    const buildErr = Database.dbErrorWith(metadata).transformBuildModel('toInstances');
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const)))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -150,7 +151,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
             where: { id },
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('from'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('from'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
 
         return rawData.map(buildRawData(__build).default);
@@ -162,7 +163,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromWithResolved'))
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
 
         return rawData.map(buildRawData(__build).withResolved);
@@ -171,7 +172,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
         const rawDataList = Database.transformResult(
           client.payment.findMany(args),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
 
         return rawDataList.map((ms) => ({
@@ -187,7 +188,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
             include: includeKeys2select(includeKeys),
           }),
         )
-          .mapErr(Database.dbErrorWith(metadata).transform('fetchManyWithResolved'))
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchManyWithResolved'))
           .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved));
 
         return rawDataList.map((ms) => ({
@@ -210,7 +211,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
     return Database.transformResult(
       this.client.payment.update({ data: fillPrismaSkip(data), where: { id: this.data.id } }),
     )
-      .mapErr(this.dbError.transform('update'))
+      .mapErr(this.dbError.transformPrismaBridge('update'))
       .map((r) => buildRawData($Payment.with(this.client).__build).default(schemaRaw2rawData<$Payment>(r)))
       .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
@@ -219,7 +220,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
     return Database.transformResult(
       this.client.payment.delete({ where: { id: this.data.id } }),
     )
-      .mapErr(this.dbError.transform('delete'))
+      .mapErr(this.dbError.transformPrismaBridge('delete'))
       .map(() => undefined);
   }
 

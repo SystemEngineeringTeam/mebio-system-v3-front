@@ -1,5 +1,5 @@
 import type { $Member } from '@/models/member';
-import type { DatabaseResult } from '@/types/database';
+import type { DatabaseErrorWith, DatabaseResult } from '@/types/database';
 import type { Nullable } from '@/types/utils';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import type { Result } from 'neverthrow';
@@ -53,10 +53,7 @@ export type ModelBuilderType =
   | { type: 'ANONYMOUS' }
   | { type: 'SELF' }
   | { type: 'MEMBER'; member: $Member };
-export type BuildModelError =
-  | { type: 'PERMISSION_DENIED'; detail: { builder: ModelBuilderType } };
-
-export type BuildModelResult<S> = Result<S, BuildModelError>;
+export type BuildModelResult<S> = Result<S, DatabaseErrorWith<'MODEL_BUILD_ERROR'>>;
 
 export type ModelUnwrappedInstances__DO_NOT_EXPOSE<
   M extends AnyModel,
