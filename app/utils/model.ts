@@ -1,6 +1,8 @@
 import type { $Member } from '@/models/member';
 import type { AnyModel, ModelBuilderInternal, ModelBuilderType, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModelSchemaResolvedRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
+import { fromEntries, getEntries } from '@/utils';
+import { Prisma } from '@prisma/client';
 
 export function includeKeys2select<IncludeKey extends string>(includeKeys: readonly IncludeKey[]): Record<IncludeKey, true> {
   return Object.fromEntries(includeKeys.map((key) => [key, true])) as Record<IncludeKey, true>;
@@ -89,4 +91,15 @@ export function schemaRaw2rawData<M extends AnyModel>(
     __raw,
     __rawResolved: undefined,
   };
+}
+
+export function fillPrismaSkip(obj: Record<string, unknown>) {
+  return fromEntries(
+    getEntries(obj).map(([k, v]) => {
+      if (v == null) {
+        return [k, Prisma.skip];
+      }
+      return [k, v];
+    }),
+  );
 }

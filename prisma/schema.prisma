@@ -1,6 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  // `strictUndefinedChecks` - ref: https://github.com/prisma/prisma/issues/10894#issuecomment-2585835024
+  previewFeatures = ["driverAdapters", "strictUndefinedChecks"]
 }
 
 datasource db {

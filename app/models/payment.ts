@@ -10,7 +10,7 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
-import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
+import { buildRawData, fillPrismaSkip, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 import { match } from 'ts-pattern';
 
@@ -206,12 +206,21 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
     );
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
-    throw new Error('Method not implemented.');
+  public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
+    return Database.transformResult(
+      this.client.payment.update({ data: fillPrismaSkip(data), where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('update'))
+      .map((r) => buildRawData($Payment.with(this.client).__build).default(schemaRaw2rawData<$Payment>(r)))
+      .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
 
   public delete(): DatabaseResult<void> {
-    throw new Error('Method not implemented.');
+    return Database.transformResult(
+      this.client.payment.delete({ where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('delete'))
+      .map(() => undefined);
   }
 
   public hoge() { }

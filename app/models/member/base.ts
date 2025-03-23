@@ -16,7 +16,7 @@ import type {
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
 import { type MemberDetail, toMemberDetail } from '@/utils/member';
-import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
+import { buildRawData, fillPrismaSkip, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { match } from 'ts-pattern';
 
@@ -261,12 +261,21 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
     );
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
-    throw new Error('Method not implemented.');
+  public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
+    return Database.transformResult(
+      this.client.memberBase.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
+    )
+      .mapErr(this.dbError.transform('update'))
+      .map((r) => buildRawData($MemberBase.with(this.client).__build).default(schemaRaw2rawData<$MemberBase>(r)))
+      .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
 
-  public delete(_operator: ThisModel): DatabaseResult<void> {
-    throw new Error('Method not implemented.');
+  public delete(): DatabaseResult<void> {
+    return Database.transformResult(
+      this.client.memberBase.delete({ where: { memberId: this.data.memberId } }),
+    )
+      .mapErr(this.dbError.transform('delete'))
+      .map(() => undefined);
   }
 
   public hoge() { }

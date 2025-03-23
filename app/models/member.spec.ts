@@ -64,67 +64,111 @@ describe('部員モデル', () => {
     expect(member.data).toEqual(memberData);
   });
 
-  it('自身の MemberId から部員モデルをコンストラクトできるか', async () => {
-    (await Database.transformResult(
-      client.member.create({
-        data: memberDataRaw,
-      }),
-    ))._unsafeUnwrap();
+  describe('READ', () => {
+    it('自身の MemberId から部員モデルをコンストラクトできるか', async () => {
+      (await Database.transformResult(
+        client.member.create({
+          data: memberDataRaw,
+        }),
+      ))._unsafeUnwrap();
 
-    const member = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf())._unsafeUnwrap();
-    expect(member.data).toEqual(memberData);
+      const member = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf())._unsafeUnwrap();
+      expect(member.data).toEqual(memberData);
+    });
+    it('複数取得ができるか', async () => {
+      (await Database.transformResult(
+        client.member.createMany({
+          data: [memberDataRaw, memberDataRaw2],
+        }),
+      ))._unsafeUnwrap();
+
+      const members = ((await Member.fetchMany({}))._unsafeUnwrap()).buildBySelf().map((m) => m._unsafeUnwrap());
+
+      expect(members).toHaveLength(2);
+      expect(members[0]?.data).toEqual(memberData);
+      expect(members[1]?.data).toEqual(memberData2);
+    });
+    it('複数取得 (個数制限) ができるか', async () => {
+      (await Database.transformResult(
+        client.member.createMany({
+          data: [memberDataRaw, memberDataRaw2],
+        }),
+      ))._unsafeUnwrap();
+
+      const members = ((await Member.fetchMany({ take: 1 }))._unsafeUnwrap()).buildBySelf().map((m) => m._unsafeUnwrap());
+
+      expect(members).toHaveLength(1);
+      expect(members[0]?.data).toEqual(memberData);
+    });
+
+    it('存在しない MemberId のときに `NO_ROWS_FOUND` になるか', async () => {
+      const rMember = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf());
+
+      expect(rMember.isErr()).toBe(true);
+      if (rMember.isErr()) {
+        expect(rMember.error.type).toBe('NO_ROWS_FOUND');
+      }
+    });
+
+    it('匿名アクセスのときに `PERMISSION_DENIED` になるか', async () => {
+      (await Database.transformResult(
+        client.member.create({
+          data: memberDataRaw,
+        }),
+      ))._unsafeUnwrap();
+
+      const builder: ModelBuilderType = { type: 'ANONYMOUS' };
+      const rMember = (await Member.from(memberData.id)).andThen((m) => m.build(builder));
+
+      expect(rMember.isErr()).toBe(true);
+      if (rMember.isErr()) {
+        expect(rMember.error.type).toBe('PERMISSION_DENIED');
+      }
+    });
   });
+  describe('UPDATE', () => {
+    it('部員の情報を更新できるか', async () => {
+      (await Database.transformResult(
+        client.member.create({
+          data: memberDataRaw,
+        }),
+      ))._unsafeUnwrap();
 
-  it('複数取得ができるか', async () => {
-    (await Database.transformResult(
-      client.member.createMany({
-        data: [memberDataRaw, memberDataRaw2],
-      }),
-    ))._unsafeUnwrap();
+      const member = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf())._unsafeUnwrap();
+      const rUpdatedMember = await member.update({ email: 'newemail@example.com' });
 
-    const members = ((await Member.fetchMany({}))._unsafeUnwrap()).buildBySelf().map((m) => m._unsafeUnwrap());
-
-    expect(members).toHaveLength(2);
-    expect(members[0]?.data).toEqual(memberData);
-    expect(members[1]?.data).toEqual(memberData2);
+      expect(rUpdatedMember.isOk()).toBe(true);
+      if (rUpdatedMember.isOk()) {
+        expect(rUpdatedMember.value.data).toEqual({
+          ...memberData,
+          email: 'newemail@example.com',
+        });
+      }
+    });
   });
-  it('複数取得 (個数制限) ができるか', async () => {
-    (await Database.transformResult(
-      client.member.createMany({
-        data: [memberDataRaw, memberDataRaw2],
-      }),
-    ))._unsafeUnwrap();
+  describe('DELETE', () => {
+    it('部員を削除できるか', async () => {
+      (await Database.transformResult(
+        client.member.create({
+          data: memberDataRaw,
+        }),
+      ))._unsafeUnwrap();
 
-    const members = ((await Member.fetchMany({ take: 1 }))._unsafeUnwrap()).buildBySelf().map((m) => m._unsafeUnwrap());
+      const member = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf())._unsafeUnwrap();
+      const rDeletedMember = await member.delete();
 
-    expect(members).toHaveLength(1);
-    expect(members[0]?.data).toEqual(memberData);
+      expect(rDeletedMember.isOk()).toBe(true);
+      if (rDeletedMember.isOk()) {
+        expect(rDeletedMember.value).toBeUndefined();
+      }
+
+      const rMember = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf());
+      expect(rMember.isErr()).toBe(true);
+      if (rMember.isErr()) {
+        expect(rMember.error.type).toBe('NO_ROWS_FOUND');
+      }
+    });
   });
-  it('存在しない MemberId のときに `NO_ROWS_FOUND` になるか', async () => {
-    const rMember = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf());
-
-    expect(rMember.isErr()).toBe(true);
-    if (rMember.isErr()) {
-      expect(rMember.error.type).toBe('NO_ROWS_FOUND');
-    }
-  });
-
-  it('匿名アクセスのときに `PERMISSION_DENIED` になるか', async () => {
-    (await Database.transformResult(
-      client.member.create({
-        data: memberDataRaw,
-      }),
-    ))._unsafeUnwrap();
-
-    const builder: ModelBuilderType = { type: 'ANONYMOUS' };
-    const rMember = (await Member.from(memberData.id)).andThen((m) => m.build(builder));
-
-    expect(rMember.isErr()).toBe(true);
-    if (rMember.isErr()) {
-      expect(rMember.error.type).toBe('PERMISSION_DENIED');
-    }
-  });
-
   it('リレーション済みでないモデルでリレーションを解決できるか', () => {
     const _member = Member.__build.bySelf(rawData).map((m) => m.default)._unsafeUnwrap();
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().not.toEqualTypeOf<never>();

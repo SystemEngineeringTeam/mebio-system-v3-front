@@ -7,7 +7,7 @@ import type {
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
-import { buildRawData, matchWithResolved } from '@/utils/model';
+import { buildRawData, matchWithResolved, schemaRaw2rawData } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 import { match } from 'ts-pattern';
 
@@ -140,12 +140,27 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
     } satisfies ModelBuilder<ThisModel>;
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
-    throw new Error('Method not implemented.');
+  public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
+    return Database.transformResult(
+      this.client.snapshot.update({
+        data: {
+          ...data,
+          body: JSON.stringify(data.body),
+        },
+        where: { id: this.data.id },
+      }),
+    )
+      .mapErr(this.dbError.transform('update'))
+      .map((r) => buildRawData($Snapshot.with(this.client).__build).default(schemaRaw2rawData<$Snapshot>(r)))
+      .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
 
-  public delete(_operator: ThisModel): DatabaseResult<void> {
-    throw new Error('Method not implemented.');
+  public delete(): DatabaseResult<void> {
+    return Database.transformResult(
+      this.client.snapshot.delete({ where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('delete'))
+      .map(() => undefined);
   }
 
   public hoge() { }

@@ -265,12 +265,21 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
     );
   }
 
-  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
-    throw new Error('Method not implemented.');
+  public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
+    return Database.transformResult(
+      this.client.member.update({ data, where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('update'))
+      .map((r) => buildRawData($Member.with(this.client).__build).default(schemaRaw2rawData<$Member>(r)))
+      .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
 
   public delete(): DatabaseResult<void> {
-    throw new Error('Method not implemented.');
+    return Database.transformResult(
+      this.client.member.delete({ where: { id: this.data.id } }),
+    )
+      .mapErr(this.dbError.transform('delete'))
+      .map(() => undefined);
   }
 
   public hoge() { }
