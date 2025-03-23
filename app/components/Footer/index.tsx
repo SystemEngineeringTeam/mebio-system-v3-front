@@ -1,15 +1,7 @@
-import { styled } from 'restyle';
-
-const FooterStyled = styled('footer', {
-  height: 'var(--footer-height)',
-  color: 'var(--background-color)',
-  backgroundColor: 'var(--on-background-color)',
-  textAlign: 'center',
-  lineHeight: 'var(--footer-height)',
-});
-
 export default function Footer() {
   return (
-    <FooterStyled>SET © 2025 Copyright.</FooterStyled>
+    <footer className="flex h-[var(--footer-height)] items-center justify-center bg-primary">
+      <span className="text-lg text-primary-foreground">SET © 2025 Copyright.</span>
+    </footer>
   );
 }

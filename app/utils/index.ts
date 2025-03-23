@@ -1,14 +1,8 @@
 import type { Brand, Entries } from '@/types/utils';
 import type { Result } from 'neverthrow';
 import type { ZodError } from 'zod';
-import { TYPES } from '@/consts/member';
 import { err, ok } from 'neverthrow';
 import { string } from 'zod';
-
-export function toTypeName(key: string) {
-  const type = TYPES.find((t) => t.key === key);
-  return type?.name;
-}
 
 export function toUncapitalize<T extends string>(str: T): Uncapitalize<T> {
   return str.charAt(0).toLowerCase() + str.slice(1) as Uncapitalize<T>;

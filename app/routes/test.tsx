@@ -59,6 +59,7 @@ export default function Index() {
     <div>
       <div>test</div>
       <textarea
+        className='bg-gray-100 border-2 border-gray-300 rounded-md p-2'
         defaultValue={JSON.stringify(member, null, 2)}
         style={{
           width: '100%',

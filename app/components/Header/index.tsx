@@ -1,52 +1,25 @@
-import authUserContext from '@/components/AuthtContext';
-import { Link } from '@remix-run/react';
+import authUserContext from '@/components/AuthContext';
+import AvatarMenu from '@/components/Header/AvatarMenu';
+import { Button } from '@/components/ui/button';
+import { Form, Link } from '@remix-run/react';
 import { useContext } from 'react';
-import { styled } from 'restyle';
-import Avatar from './Avatar';
-
-const HeaderStyled = styled('header', {
-  padding: '0 20px',
-  backgroundColor: 'var(--on-background-color)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  position: 'static',
-  top: 0,
-  left: 0,
-  right: 0,
-});
-
-const Title = styled(Link, {
-  color: 'var(--background-color)',
-  fontSize: 'var(--fontsize-md)',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-});
-
-const Menu = styled('div', {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '30px',
-});
-
-const LinkStyled = styled(Link, {
-  color: 'var(--background-color)',
-  textDecoration: 'none',
-  fontSize: 'var(--fontsize-md)',
-  cursor: 'pointer',
-});
 
 export default function Header() {
   const user = useContext(authUserContext);
 
   return (
-    <HeaderStyled>
-      <Title to="/">名簿システム</Title>
+    <header className="flex h-[var(--header-height)] items-center bg-primary px-5 font-bold text-primary-foreground">
+      <Link to="/">名簿システム</Link>
 
-      <Menu>
-        {user?.isAdmin === true && <LinkStyled to="/admin">管理者</LinkStyled>}
-        {user !== null && <Avatar user={user} />}
-      </Menu>
-    </HeaderStyled>
+      <div className="ml-auto flex items-center">
+        {user
+          ? <AvatarMenu user={user} />
+          : (
+              <Form action="/auth/login" method="post">
+                <Button className="text-primary" size="sm" variant="outline">ログイン</Button>
+              </Form>
+            )}
+      </div>
+    </header>
   );
 }

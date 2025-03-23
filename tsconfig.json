@@ -6,7 +6,7 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+    "**/.client/**/*.tsx",
   ],
   "compilerOptions": {
     "lib": [
@@ -30,6 +30,8 @@
     "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "baseUrl": ".",
     "paths": {
       "@/*": [
