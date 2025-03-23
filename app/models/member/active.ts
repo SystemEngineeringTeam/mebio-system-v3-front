@@ -43,6 +43,7 @@ type Schema = Override<
 
 type IncludeKey = keyof Prisma.MemberActiveInclude;
 const includeKeys = ['Member'] as const satisfies IncludeKey[];
+const includeKeysRelated = ['MemberActiveInternal', 'MemberActiveExternal'] as const;
 
 interface SchemaResolvedRaw {
   Member: ModelSchemaRawOf<$Member>;
@@ -158,7 +159,7 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
           Database.transformResult(
             client.member.findUniqueOrThrow({
               where: { id: memberId },
-              include: includeKeys2select(['MemberActiveInternal', 'MemberActiveExternal']),
+              include: includeKeys2select(includeKeysRelated),
             }),
           ),
         ])
@@ -174,6 +175,57 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
             },
           ),
         );
+      },
+      fetchMany: (args) => {
+        const rawDataList = Database.transformResult(
+          client.memberActive.findMany(args),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).default(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).default(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).default(r).buildBySelf()),
+        }));
+      },
+      fetchManyWithResolved: (args) => {
+        const rFetchedData = ResultAsync.combine([
+          Database.transformResult(
+            client.memberActive.findMany({
+              ...args,
+              orderBy: { memberId: 'asc' },
+            }),
+          ),
+          Database.transformResult(
+            client.member.findMany({
+              orderBy: { id: 'asc' },
+              include: includeKeys2select(includeKeysRelated),
+            }),
+          ),
+        ])
+          .mapErr(Database.dbErrorWith(metadata).transform('fetchManyWithResolved'));
+
+        const rawDataList = rFetchedData.map(([memberBase, members]) => {
+          const membersMap = new Map<string, SchemaResolvedRaw>();
+
+          members.forEach((m) => {
+            const { MemberActiveInternal, MemberActiveExternal, ...Member } = m;
+            membersMap.set(m.id, { Member, MemberActiveInternal, MemberActiveExternal });
+          });
+
+          return memberBase.map((r) => {
+            const resolved = membersMap.get(r.memberId);
+            if (resolved == null) throw new Error('不正なデータ: `Member` が取得できませんでした');
+            return { __raw: r, __rawResolved: resolved };
+          });
+        });
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).withResolved(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).withResolved(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).withResolved(r).buildBySelf()),
+        }));
       },
     } satisfies ModelBuilder<ThisModel>;
   }

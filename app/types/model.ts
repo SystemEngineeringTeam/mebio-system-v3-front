@@ -54,7 +54,7 @@ export type ModelBuilderType =
   | { type: 'SELF' }
   | { type: 'MEMBER'; member: $Member };
 export type BuildModelError =
-  | { type: 'PERMISSION_DENIED'; detail: { builder: any } };
+  | { type: 'PERMISSION_DENIED'; detail: { builder: ModelBuilderType } };
 
 export type BuildModelResult<S> = Result<S, BuildModelError>;
 
@@ -81,21 +81,40 @@ export interface ModelBuilderInternal<
   [key: string]: any;
 }
 
+interface ModelBuilderInternalReturns<
+  M extends AnyModel,
+  Mode extends ModelMode,
+  VV = ExtractModelVariants<M>[Mode],
+> {
+  build: (builder: ModelBuilderType) => BuildModelResult<VV>;
+  buildBy: (memberAsBuilder: $Member) => BuildModelResult<VV>;
+  buildBySelf: () => BuildModelResult<VV>;
+}
+
+interface ModelBuilderInternalArrayReturns<
+  M extends AnyModel,
+  Mode extends ModelMode,
+  VV = ExtractModelVariants<M>[Mode],
+> {
+  build: (builder: ModelBuilderType) => Array<BuildModelResult<VV>>;
+  buildBy: (memberAsBuilder: $Member) => Array<BuildModelResult<VV>>;
+  buildBySelf: () => Array<BuildModelResult<VV>>;
+}
+
 export interface ModelBuilder<
   M extends AnyModel,
-  V extends ModelVariants = ExtractModelVariants<M>,
 > {
   __build: ModelBuilderInternal<M>;
-  from: (...args: any[]) => DatabaseResult<{
-    buildBy: (builder: $Member) => BuildModelResult<V['DEFAULT']>;
-    buildBySelf: () => BuildModelResult<V['DEFAULT']>;
-  }>;
-  fromWithResolved?: (...args: any[]) => DatabaseResult<{
-    buildBy: (builder: $Member) => BuildModelResult<V['WITH_RESOLVED']>;
-    buildBySelf: () => BuildModelResult<V['WITH_RESOLVED']>;
-  }>;
+  from: (...args: any[]) => DatabaseResult<ModelBuilderInternalReturns<M, 'DEFAULT'>>;
+  fromWithResolved?: (...args: any[]) => DatabaseResult<ModelBuilderInternalReturns<M, 'WITH_RESOLVED'>>;
+  fetchMany?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<ModelBuilderInternalArrayReturns<M, 'DEFAULT'>>;
+  fetchManyWithResolved?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<ModelBuilderInternalArrayReturns<M, 'WITH_RESOLVED'>>;
   [key: string]: any;
 }
+
+export type FetchModelMany<
+  M extends Uncapitalize<Prisma.ModelName>,
+> = Omit<NonNullable<Parameters<PrismaClient[M]['findMany']>[0]>, 'include' | 'select'>;
 
 /**
  * __M = (client) => M のときの M

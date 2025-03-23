@@ -185,12 +185,12 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, ({ member }) => {
         // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
         if (member.data.securityRole !== 'OWNER') {
-          return err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const);
+          return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
         }
         return ok(__toUnwrappedInstances(rawData, builder));
       })
@@ -241,6 +241,19 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
           });
 
         return rawData.map(buildRawData(__build).withResolved);
+      },
+      fetchMany: (args) => {
+        const rawDataList = Database.transformResult(
+          client.member.findMany(args),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).default(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).default(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).default(r).buildBySelf()),
+        }));
       },
     } satisfies ModelBuilder<ThisModel>;
   }

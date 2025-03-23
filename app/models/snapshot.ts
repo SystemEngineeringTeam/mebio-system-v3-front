@@ -99,7 +99,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -123,6 +123,19 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
           .map((data) => ({ __raw: data, __rawResolved: undefined }));
 
         return rawData.map(buildRawData(__build).default);
+      },
+      fetchMany: (args) => {
+        const rawDataList = Database.transformResult(
+          client.snapshot.findMany(args),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .map((r) => r.map((data) => ({ __raw: data, __rawResolved: undefined })));
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).default(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).default(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).default(r).buildBySelf()),
+        }));
       },
     } satisfies ModelBuilder<ThisModel>;
   }

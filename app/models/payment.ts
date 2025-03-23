@@ -130,7 +130,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -166,6 +166,35 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
           .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
 
         return rawData.map(buildRawData(__build).withResolved);
+      },
+      fetchMany: (args) => {
+        const rawDataList = Database.transformResult(
+          client.payment.findMany(args),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transform('fetchMany'))
+          .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).default(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).default(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).default(r).buildBySelf()),
+        }));
+      },
+      fetchManyWithResolved: (args) => {
+        const rawDataList = Database.transformResult(
+          client.payment.findMany({
+            ...args,
+            include: includeKeys2select(includeKeys),
+          }),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transform('fetchManyWithResolved'))
+          .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved));
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).withResolved(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).withResolved(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).withResolved(r).buildBySelf()),
+        }));
       },
     } satisfies ModelBuilder<ThisModel>;
   }

@@ -130,7 +130,8 @@ describe('モデルまわりの Type Utilities', () => {
     expectTypeOf<ThisModel['dataResolved']>().toEqualTypeOf<undefined>();
 
     type Expected = DatabaseResult<{
-      buildBy: (builder: $Member) => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+      build: (builder: ModelBuilderType) => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+      buildBy: (memberAsBuilder: $Member) => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
       buildBySelf: () => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
     }>;
     expectTypeOf<ReturnType<ThisModel['resolveRelation']>>().toEqualTypeOf<Expected>();

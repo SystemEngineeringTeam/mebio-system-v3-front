@@ -102,7 +102,7 @@
       "    })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;",
       "",
       "    const toInstances = ((rawData, builder) => match(builder)",
-      "      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))",
+      "      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder }} as const))",
       "      .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))",
       "      .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))",
       "      .exhaustive()",

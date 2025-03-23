@@ -25,6 +25,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const member = await Member
     // そのモデルの主キーからモデルを取得する (全モデル共通)
     .from(memberId)
+    .map((m) => m.buildBySelf())
     // これもエラー起きるかもなので...
     .match(
       // OK のとき. そのまま返しても, ここで加工してもおｋ
@@ -48,7 +49,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
   */
 
-  return { member: member.data };
+  return { member: member._unsafeUnwrap().data };
 }
 
 export default function Index() {
