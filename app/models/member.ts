@@ -1,8 +1,14 @@
+import type { $MemberActive } from '@/models/member/active';
+import type { $MemberActiveExternal } from '@/models/member/active/external';
+import type { $MemberActiveInternal } from '@/models/member/active/internal';
+import type { $MemberAlumni } from '@/models/member/alumni';
+import type { $MemberBase } from '@/models/member/base';
+import type { $MemberSensitive } from '@/models/member/sensitive';
+import type { $MemberStatus } from '@/models/member/status';
 import type { $Payment } from '@/models/payment';
 import type { DatabaseResult } from '@/types/database';
 import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Brand, Nullable, Override } from '@/types/utils';
-import type { MemberDetail } from '@/utils/member';
 import type {
   Prisma,
   PrismaClient,
@@ -10,6 +16,7 @@ import type {
 } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid, toBrand } from '@/utils';
+import { type MemberDetail, toMemberDetail } from '@/utils/member';
 import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
 import { err, ok } from 'neverthrow';
 import { match } from 'ts-pattern';
@@ -129,7 +136,15 @@ const normalizer = ((client, builder) => ({
           Approver: () => PaymentAsApprover.map((raw) => buildRawData(models.Payment.__build).default(schemaRaw2rawData<$Payment>(raw)).build(builder)),
         },
         memberStatusAsUpdaterTo: {
+          HasDeleted: () => MemberStatusAsUpdaterToHasDeleted.map((raw) => buildRawData(models.member.Status.__build).default(schemaRaw2rawData<$MemberStatus>(raw)).build(builder)),
+          LastRenewalDate: () => MemberStatusAsUpdaterToLastRenewalDate.map((raw) => buildRawData(models.member.Status.__build).default(schemaRaw2rawData<$MemberStatus>(raw)).build(builder)),
         },
+      },
+      member: {
+        Status: () => buildRawData(models.member.Status.__build).default(schemaRaw2rawData<$MemberStatus>(MemberStatus)).build(builder),
+        Base: () => buildRawData(models.member.Base.__build).default(schemaRaw2rawData<$MemberBase>(MemberBase)).build(builder),
+        Sensitive: () => buildRawData(models.member.Sensitive.__build).default(schemaRaw2rawData<$MemberSensitive>(MemberSensitive)).build(builder),
+        detail: toMemberDetail(client, builder, { MemberAlumni, MemberActive, MemberActiveInternal, MemberActiveExternal }),
       },
     };
   },
@@ -163,7 +178,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
     this.client = __prisma;
   }
 
-  public static with(client: PrismaClient): ModelBuilder<ThisModel> {
+  public static with(client: PrismaClient) {
     const __toUnwrappedInstances = ((rawData, builder) => ({
       default: new $Member(client, rawData, builder),
       withResolved: new $Member<'WITH_RESOLVED'>(client, rawData, builder),
@@ -209,11 +224,25 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
           }),
         )
           .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-          .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
+          // FIXME: もっと良い書き方あるかも
+          .map(({ MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, ...rest }) => {
+            // NOTE: Nullable になりうる値は, Prisma の `Member` モデルに関連する 1:1 のスキーマ定義を参考のこと.
+            //  ref: https://github.com/SystemEngineeringTeam/meibo-system-v3/blob/86d29333aae5e7c0afe889f36081b622959d07a7/prisma/schema.prisma#L26-L33
+            if (MemberBase == null) throw new Error('不正なデータ: `MemberBase` が取得できませんでした');
+            if (MemberSensitive == null) throw new Error('不正なデータ: `MemberSensitive` が取得できませんでした');
+            if (MemberActive == null) throw new Error('不正なデータ: `MemberActive` が取得できませんでした');
+            if (MemberActiveInternal == null) throw new Error('不正なデータ: `MemberActiveInternal` が取得できませんでした');
+            if (MemberActiveExternal == null) throw new Error('不正なデータ: `MemberActiveExternal` が取得できませんでした');
+            if (MemberAlumni == null) throw new Error('不正なデータ: `MemberAlumni` が取得できませんでした');
+            if (MemberStatus == null) throw new Error('不正なデータ: `MemberStatus` が取得できませんでした');
+            const d = { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, ...rest };
+
+            return separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved(d);
+          });
 
         return rawData.map(buildRawData(__build).withResolved);
       },
-    };
+    } satisfies ModelBuilder<ThisModel>;
   }
 
   public resolveRelation(): ModelResolver<Mode, ThisModel> {
@@ -227,7 +256,7 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
     throw new Error('Method not implemented.');
   }
 
-  public delete(_operator: ThisModel): DatabaseResult<void> {
+  public delete(): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
 

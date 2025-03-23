@@ -23,7 +23,7 @@ export type ModelResolver<
   M extends AnyModel,
 > = ModeWithDefault<
   Mode,
-  ReturnType<ModelBuilder<M>['fromWithResolved']>
+  ReturnType<NonNullable<ModelBuilder<M>['fromWithResolved']>>
 >;
 
 export interface Model<
@@ -90,7 +90,7 @@ export interface ModelBuilder<
     buildBy: (builder: $Member) => BuildModelResult<V['DEFAULT']>;
     buildBySelf: () => BuildModelResult<V['DEFAULT']>;
   }>;
-  fromWithResolved: (...args: any[]) => DatabaseResult<{
+  fromWithResolved?: (...args: any[]) => DatabaseResult<{
     buildBy: (builder: $Member) => BuildModelResult<V['WITH_RESOLVED']>;
     buildBySelf: () => BuildModelResult<V['WITH_RESOLVED']>;
   }>;

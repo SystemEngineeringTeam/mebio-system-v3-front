@@ -1,15 +1,15 @@
 import type { ModelMetadata } from '@/types/model';
 import type { PartialNullable } from '@/types/utils';
 import { $Member } from '@/models/member';
-import { __MemberActive } from '@/models/member/active';
-import { __MemberActiveExternal } from '@/models/member/active/external';
-import { __MemberActiveInternal } from '@/models/member/active/internal';
-import { __MemberAlumni } from '@/models/member/alumni';
-import { __MemberBase } from '@/models/member/base';
-import { __MemberSensitive } from '@/models/member/sensitive';
-import { __MemberStatus } from '@/models/member/status';
+import { $MemberActive } from '@/models/member/active';
+import { $MemberActiveExternal } from '@/models/member/active/external';
+import { $MemberActiveInternal } from '@/models/member/active/internal';
+import { $MemberAlumni } from '@/models/member/alumni';
+import { $MemberBase } from '@/models/member/base';
+import { $MemberSensitive } from '@/models/member/sensitive';
+import { $MemberStatus } from '@/models/member/status';
 import { $Payment } from '@/models/payment';
-import { __Snapshot } from '@/models/snapshot';
+import { $Snapshot } from '@/models/snapshot';
 import { clientKnownErrorCode, type DatabaseError, type DatabaseErrorDetail, type PrismaClientError } from '@/types/database';
 import { getEntries } from '@/utils';
 import { Prisma, type PrismaClient } from '@prisma/client';
@@ -23,18 +23,18 @@ export class Database {
     this.models = {
       Member: $Member.with(client),
       member: {
-        Status: __MemberStatus(client),
-        Base: __MemberBase(client),
-        Sensitive: __MemberSensitive(client),
-        Active: __MemberActive(client),
+        Status: $MemberStatus.with(client),
+        Base: $MemberBase.with(client),
+        Sensitive: $MemberSensitive.with(client),
+        Active: $MemberActive.with(client),
         active: {
-          Internal: __MemberActiveInternal(client),
-          External: __MemberActiveExternal(client),
+          Internal: $MemberActiveInternal.with(client),
+          External: $MemberActiveExternal.with(client),
         },
-        Alumni: __MemberAlumni(client),
+        Alumni: $MemberAlumni.with(client),
       },
       Payment: $Payment.with(client),
-      Snapshot: __Snapshot(client),
+      Snapshot: $Snapshot.with(client),
     };
   }
 
@@ -47,15 +47,6 @@ export class Database {
     const _default
       = match(detail)
         .returnType<{ message: string; hint?: string }>()
-        .with(
-          { type: 'PERMISSION_DENIED' },
-          ({ _raw: { builder } }) => (
-            {
-              message: 'この操作は許可されていません',
-              hint: `操作者 ${builder.data.id} の権限が不足しています`,
-            }
-          ),
-        )
         .with({ type: 'NO_ROWS_FOUND' }, () => ({ message: `この${metadata.displayName}は見つかりませんでした` }))
         .with({ type: 'ALREADY_EXISTS' }, () => ({ message: `この${metadata.displayName}は既に存在します` }))
         .with({ type: 'DATA_VALIDATION_FAILED' }, () => ({ message: `この${metadata.displayName}のデータが不正です` }))

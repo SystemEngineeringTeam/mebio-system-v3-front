@@ -1,4 +1,4 @@
-import type { ModelSchemaOf, ModelSchemaRawOf } from '@/types/model';
+import type { ModelBuilderType, ModelSchemaOf, ModelSchemaRawOf } from '@/types/model';
 import type { PrismaClient } from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { PrismockClient } from 'prismock';
@@ -40,12 +40,12 @@ describe('部員モデル', () => {
   });
 
   it('生データを取得できるか', () => {
-    const member = Member.__build.bySelf(rawData)._unsafeUnwrap().default;
+    const member = Member.__build.bySelf(rawData).map((m) => m.default)._unsafeUnwrap();
     expect(member.__raw).toEqual(memberDataRaw);
   });
 
   it('データが正規化されるか', () => {
-    const member = Member.__build.bySelf(rawData)._unsafeUnwrap().default;
+    const member = Member.__build.bySelf(rawData).map((m) => m.default)._unsafeUnwrap();
     expect(member.data).toEqual(memberData);
   });
 
@@ -56,12 +56,12 @@ describe('部員モデル', () => {
       }),
     ))._unsafeUnwrap();
 
-    const member = (await Member.from(memberData.id))._unsafeUnwrap().buildBySelf()._unsafeUnwrap();
+    const member = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf())._unsafeUnwrap();
     expect(member.data).toEqual(memberData);
   });
 
   it('存在しない MemberId のときに `NO_ROWS_FOUND` になるか', async () => {
-    const rMember = (await Member.from(memberData.id)).map((m) => m.buildBySelf()._unsafeUnwrap());
+    const rMember = (await Member.from(memberData.id)).andThen((m) => m.buildBySelf());
 
     expect(rMember.isErr()).toBe(true);
     if (rMember.isErr()) {
@@ -69,13 +69,29 @@ describe('部員モデル', () => {
     }
   });
 
+  it('匿名アクセスのときに `PERMISSION_DENIED` になるか', async () => {
+    (await Database.transformResult(
+      client.member.create({
+        data: memberDataRaw,
+      }),
+    ))._unsafeUnwrap();
+
+    const builder: ModelBuilderType = { type: 'ANONYMOUS' };
+    const rMember = (await Member.from(memberData.id)).andThen((m) => m.build(builder));
+
+    expect(rMember.isErr()).toBe(true);
+    if (rMember.isErr()) {
+      expect(rMember.error.type).toBe('PERMISSION_DENIED');
+    }
+  });
+
   it('リレーション済みでないモデルでリレーションを解決できるか', () => {
-    const _member = Member.__build.bySelf(rawData)._unsafeUnwrap().default;
+    const _member = Member.__build.bySelf(rawData).map((m) => m.default)._unsafeUnwrap();
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().not.toEqualTypeOf<never>();
   });
 
   it('リレーション済みのモデルでリレーションを解決できないか', () => {
-    const _member = Member.__build.bySelf(rawData)._unsafeUnwrap().withResolved;
+    const _member = Member.__build.bySelf(rawData).map((m) => m.withResolved)._unsafeUnwrap();
     expectTypeOf<ReturnType<typeof _member['resolveRelation']>>().toEqualTypeOf<never>();
   });
 });

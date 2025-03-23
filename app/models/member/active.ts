@@ -1,68 +1,66 @@
 import type { $Member } from '@/models/member';
+import type { $MemberActiveExternal } from '@/models/member/active/external';
+import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { DatabaseResult } from '@/types/database';
 import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
-import type { Brand, Nullable, Override } from '@/types/utils';
+import type { ArrayElem, Nullable, Override } from '@/types/utils';
 import type {
   Prisma,
   PrismaClient,
-  Payment as SchemaRaw,
+  MemberActive as SchemaRaw,
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
-import { parseUuid } from '@/utils';
+import { type MemberDetailActive, toMemberDetailActive } from '@/utils/member';
 import { buildRawData, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
-import { err, ok } from 'neverthrow';
+import { err, ok, ResultAsync } from 'neverthrow';
 import { match } from 'ts-pattern';
+import { z } from 'zod';
 
 /// Metadata ///
 
 const metadata = {
-  displayName: '支払い',
-  modelName: 'payment',
-  primaryKeyName: 'payerId',
-} as const satisfies ModelMetadata<'payment'>;
+  displayName: '現役生の情報',
+  modelName: 'memberActive',
+  primaryKeyName: 'memberId',
+} as const satisfies ModelMetadata<'memberActive'>;
 
 /// Custom Types ///
 
-type PaymentId = Brand<'payment', string>;
-const PaymentId = {
-  from: parseUuid<'payment'>,
-};
+export const GRADES = ['B1', 'B2', 'B3', 'B4', 'M1', 'M2', 'D1', 'D2', 'D3'] as const;
+export const zGrades = z.enum(GRADES);
+export type Grade = ArrayElem<typeof GRADES>;
 
 /// Model Types ///
 
 type Schema = Override<
   SchemaRaw,
   {
-    id: PaymentId;
-    payerId: MemberId;
-    receiverId: MemberId;
-    approverId: Nullable<MemberId>;
+    memberId: MemberId;
+    grade: Grade;
   }
 >;
 
-type IncludeKey = keyof Prisma.PaymentInclude;
-const includeKeys = ['MemberAsPayer', 'MemberAsReceiver', 'MemberAsApprover'] as const satisfies IncludeKey[];
+type IncludeKey = keyof Prisma.MemberActiveInclude;
+const includeKeys = ['Member'] as const satisfies IncludeKey[];
 
 interface SchemaResolvedRaw {
-  MemberAsPayer: ModelSchemaRawOf<$Member>;
-  MemberAsReceiver: ModelSchemaRawOf<$Member>;
-  MemberAsApprover: Nullable<ModelSchemaRawOf<$Member>>;
+  Member: ModelSchemaRawOf<$Member>;
+  MemberActiveInternal: Nullable<ModelSchemaRawOf<$MemberActiveInternal>>;
+  MemberActiveExternal: Nullable<ModelSchemaRawOf<$MemberActiveExternal>>;
 }
 
-interface SchemaResolved {
-  member: {
-    Payer: () => BuildModelResult<$Member>;
-    Receiver: () => BuildModelResult<$Member>;
-    Approver: () => Nullable<BuildModelResult<$Member>>;
+type SchemaResolved = {
+  _parent: {
+    Member: () => BuildModelResult<$Member>;
   };
-}
+} & MemberDetailActive;
 
 /// ModelTypes ///
 
 type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
-type ThisModel<M extends ModelMode = 'DEFAULT'> = $Payment<M>;
+type ThisModel<M extends ModelMode = 'DEFAULT'> = $MemberActive<M>;
 interface ThisModelVariants {
   DEFAULT: ThisModel;
   WITH_RESOLVED: ThisModel<'WITH_RESOLVED'>;
@@ -74,30 +72,25 @@ type RawData = ModelRawData4build<ThisModel>;
 const normalizer = ((client, builder) => ({
   schema: (__raw) => ({
     ...__raw,
-    id: PaymentId.from(__raw.id)._unsafeUnwrap(),
-    payerId: MemberId.from(__raw.payerId)._unsafeUnwrap(),
-    receiverId: MemberId.from(__raw.receiverId)._unsafeUnwrap(),
-    approverId: __raw.approverId != null ? MemberId.from(__raw.approverId)._unsafeUnwrap() : null,
+    memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
+    grade: zGrades.parse(__raw.grade),
   }),
   schemaResolved: (__rawResolved) => {
     const { models } = new Database(client);
-    const { MemberAsPayer, MemberAsReceiver, MemberAsApprover } = __rawResolved;
+    const { Member, MemberActiveExternal, MemberActiveInternal } = __rawResolved;
 
     return {
-      member: {
-        Payer: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsPayer)).build(builder),
-        Receiver: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsReceiver)).build(builder),
-        Approver: () => MemberAsApprover != null
-          ? buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsApprover)).build(builder)
-          : null,
+      _parent: {
+        Member: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(Member)).build(builder),
       },
+      ...toMemberDetailActive(client, builder, { MemberActiveExternal, MemberActiveInternal }),
     };
   },
 })) satisfies ModelNormalizer<ThisModel>;
 
 /// Model ///
 
-export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
+export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
   private dbError = Database.dbErrorWith(metadata);
   private client;
   public declare __struct: ThisModelImpl<Mode>;
@@ -125,12 +118,12 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
   public static with(client: PrismaClient) {
     const __toUnwrappedInstances = ((rawData, builder) => ({
-      default: new $Payment(client, rawData, builder),
-      withResolved: new $Payment<'WITH_RESOLVED'>(client, rawData, builder),
+      default: new $MemberActive(client, rawData, builder),
+      withResolved: new $MemberActive<'WITH_RESOLVED'>(client, rawData, builder),
     })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
     const toInstances = ((rawData, builder) => match(builder)
-      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder } } as const))
       .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
       .exhaustive()
@@ -144,10 +137,10 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
     return {
       __build,
-      from: (id: PaymentId) => {
+      from: (memberId: MemberId) => {
         const rawData = Database.transformResult(
-          client.payment.findUniqueOrThrow({
-            where: { id },
+          client.memberActive.findUniqueOrThrow({
+            where: { memberId },
           }),
         )
           .mapErr(Database.dbErrorWith(metadata).transform('from'))
@@ -155,17 +148,32 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
         return rawData.map(buildRawData(__build).default);
       },
-      fromWithResolved: (id: PaymentId) => {
-        const rawData = Database.transformResult(
-          client.payment.findUniqueOrThrow({
-            where: { id },
-            include: includeKeys2select(includeKeys),
-          }),
-        )
-          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-          .map(separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved);
+      fromWithResolved: (memberId: MemberId) => {
+        const rFetchedData = ResultAsync.combine([
+          Database.transformResult(
+            client.memberActive.findUniqueOrThrow({
+              where: { memberId },
+            }),
+          ),
+          Database.transformResult(
+            client.member.findUniqueOrThrow({
+              where: { id: memberId },
+              include: includeKeys2select(['MemberActiveInternal', 'MemberActiveExternal']),
+            }),
+          ),
+        ])
+          .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'));
 
-        return rawData.map(buildRawData(__build).withResolved);
+        return rFetchedData.map(
+          (
+            [memberActive, { MemberActiveInternal, MemberActiveExternal, ...Member }],
+          ) => buildRawData(__build).withResolved(
+            {
+              __raw: memberActive,
+              __rawResolved: { Member, MemberActiveInternal, MemberActiveExternal },
+            },
+          ),
+        );
       },
     } satisfies ModelBuilder<ThisModel>;
   }
@@ -173,7 +181,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
   public resolveRelation(): ModelResolver<Mode, ThisModel> {
     return matchWithDefault(
       this.__rawResolved,
-      () => $Payment.with(this.client).fromWithResolved(this.data.id),
+      () => $MemberActive.with(this.client).fromWithResolved(this.data.memberId),
     );
   }
 

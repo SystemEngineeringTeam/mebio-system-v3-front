@@ -1,12 +1,15 @@
-import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelRawData4build, ModelSchemaRawOf } from '@/types/model';
+import type { Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { Brand, Override } from '@/types/utils';
-import type { PrismaClient, Snapshot as SchemaRaw } from '@prisma/client';
+import type {
+  PrismaClient,
+  Snapshot as SchemaRaw,
+} from '@prisma/client';
 import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
-import { isSelf } from '@/utils/model';
+import { buildRawData, matchWithResolved } from '@/utils/model';
 import { err, ok } from 'neverthrow';
+import { match } from 'ts-pattern';
 
 /// Metadata ///
 
@@ -39,64 +42,98 @@ interface SchemaResolvedRaw {
 interface SchemaResolved {
 }
 
+/// ModelTypes ///
+
 type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-type ThisModel<Mode extends ModelMode = 'DEFAULT'> = Model<Mode, ModelGen>;
+type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
+type ThisModel<M extends ModelMode = 'DEFAULT'> = $Snapshot<M>;
+interface ThisModelVariants {
+  DEFAULT: ThisModel;
+  WITH_RESOLVED: ThisModel<'WITH_RESOLVED'>;
+}
 type RawData = ModelRawData4build<ThisModel>;
+
+/// Normalizer ///
+
+const normalizer = ((_, __) => ({
+  schema: (__raw) => ({
+    ...__raw,
+    id: SnapshotId.from(__raw.id)._unsafeUnwrap(),
+    body: JSON.parse(__raw.body),
+  }),
+  schemaResolved: (__rawResolved) => ({}),
+})) satisfies ModelNormalizer<ThisModel>;
 
 /// Model ///
 
-// eslint-disable-next-line func-style, antfu/top-level-function
-export const __Snapshot = <Mode extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Snapshot implements ThisModel<Mode> {
-  public static __prisma = client;
-
+export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
   private dbError = Database.dbErrorWith(metadata);
+  private client;
+  public declare __struct: ThisModelImpl<Mode>;
+  public declare __variants: ThisModelVariants;
 
   public __raw: SchemaRaw;
   public data: Schema;
+  public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
+  public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  private constructor({ __raw }: { __raw: ModelSchemaRawOf<ModelGen> }, private builder?: ModelEntityOf<$Member>) {
+  private constructor(
+    public __prisma: PrismaClient,
+    { __raw, __rawResolved }: RawData,
+    private builder: ModelBuilderType,
+  ) {
+    const n = normalizer(__prisma, this.builder);
+
     this.__raw = __raw;
-    this.data = {
-      ...__raw,
-      id: SnapshotId.from(__raw.id)._unsafeUnwrap(),
-      body: JSON.parse(__raw.body),
-    };
+    this.data = n.schema(__raw);
+    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, n.schemaResolved);
+    this.__rawResolved = rawResolved;
+    this.dataResolved = dataResolved;
+    this.client = __prisma;
   }
 
-  public static __build(rawData: { __raw: SchemaRaw }, builder?: ModelEntityOf<$Member>): BuildModelResult<ThisModel<'DEFAULT'>> {
-    const Model = __Snapshot<'DEFAULT'>(client);
-    if (isSelf(builder)) {
-      return ok(new Model(rawData));
-    }
+  public static with(client: PrismaClient) {
+    const __toUnwrappedInstances = ((rawData, builder) => ({
+      default: new $Snapshot(client, rawData, builder),
+      withResolved: new $Snapshot<'WITH_RESOLVED'>(client, rawData, builder),
+    })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
 
-    // TODO: 権限を戦わせるロジックを `Member` 配下に外部化する
-    if (builder.data.securityRole !== 'OWNER') {
-      return err({ type: 'PERMISSION_DENIED', detail: { builder } } as const);
-    }
+    const toInstances = ((rawData, builder) => match(builder)
+      .with({ type: 'ANONYMOUS' }, () => err({ type: 'PERMISSION_DENIED', detail: { builder: {} } } as const))
+      .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .exhaustive()
+    ) satisfies ModelInstances<ThisModel>;
 
-    return ok(new Model(rawData, builder));
-  }
+    const __build = {
+      __with: toInstances,
+      by: (rawData, memberAsBuilder) => toInstances(rawData, { type: 'MEMBER', member: memberAsBuilder }),
+      bySelf: (rawData) => toInstances(rawData, { type: 'SELF' }),
+    } satisfies ModelBuilderInternal<ThisModel>;
 
-  public static from(id: SnapshotId) {
-    return Database.transformResult(
-      client.snapshot.findUniqueOrThrow({
-        where: { id },
-      }),
-    )
-      .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((__raw) => ({
-        buildBy: (builder: ModelEntityOf<$Member>) => Snapshot.__build({ __raw }, builder),
-        buildBySelf: () => Snapshot.__build({ __raw }),
-      }));
+    return {
+      __build,
+      from: (id: SnapshotId) => {
+        const rawData = Database.transformResult(
+          client.snapshot.findUniqueOrThrow({
+            where: { id },
+          }),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transform('from'))
+          .map((data) => ({ __raw: data, __rawResolved: undefined }));
+
+        return rawData.map(buildRawData(__build).default);
+      },
+    } satisfies ModelBuilder<ThisModel>;
   }
 
   public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
     throw new Error('Method not implemented.');
   }
 
-  public delete(): DatabaseResult<void> {
+  public delete(_operator: ThisModel): DatabaseResult<void> {
     throw new Error('Method not implemented.');
   }
-};
 
-export type $Snapshot<M extends ModelMode = 'DEFAULT'> = ModelGen & typeof __Snapshot<M>;
+  public hoge() { }
+}
