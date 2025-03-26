@@ -25,7 +25,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const member = await Member
     // そのモデルの主キーからモデルを取得する (全モデル共通)
     .from(memberId)
-    // 取得したモデルを, `buildBySelf` でビルドする. (ここでのエラーは `match` でキャッチされる)
+    // 取得したモデルを, `buildBySelf` でビルドする. (ここでのエラーは `match` へ伝搬される)
     .andThen((m) => m.buildBySelf())
     // これもエラー起きるかもなので...
     .match(
@@ -37,20 +37,24 @@ export async function loader({ context }: LoaderFunctionArgs) {
       Database.unwrapToResponse,
     );
 
+  return { member: member.data };
+
   // `match` を書かなければ `member` は `Result<Member, DatabaseError>` になるので, フロント側でエラーハンドリングしても良いと思います.
-  /* ちなみに, `match` が慣れなければ, if 使ってもおｋです.
+  /* 関数型に慣れなければ, if 使ってもおｋです.
+    const rMemberFetch = await Member.from(memberId);
 
-    const member = await Member.from(memberId);
-
-    if (member.isErr()) {
-      throw Database.unwrapToResponse(member.error);
+    if (rMemberFetch.isErr()) {
+      return Database.unwrapToResponse(rMemberFetch.error);
     }
 
-    return { member: member.value.data };
+    const rMember = rMemberFetch.value.buildBySelf();
 
+    if (rMember.isErr()) {
+      return Database.unwrapToResponse(rMember.error);
+    }
+
+    return { member: rMember.value.data };
   */
-
-  return { member };
 }
 
 export default function Index() {

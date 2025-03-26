@@ -73,6 +73,11 @@ export class Database {
     };
   }
 
+  public static reportError(error: DatabaseError): void {
+    console.error(`[DATABASE ERROR]: ${error.metadata.modelName}.${error.caller} -> ${error.error.type}::${error.error.detail.type} (${error.message})`);
+    console.error(`[DATABASE ERROR]: `, error.error);
+  }
+
   public static transformPrismaBridgeError(
     metadata: ModelMetadata<any, 'CATCH_ALL'>,
     caller: string,
@@ -135,6 +140,7 @@ export class Database {
       )
       .otherwise(() => 500);
 
+    Database.reportError(error);
     throw new Response(JSON.stringify(error), { status });
   }
 
