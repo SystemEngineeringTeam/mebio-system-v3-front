@@ -1,9 +1,8 @@
 import type { ModelBuilderType, ModelSchemaOf, ModelSchemaRawOf } from '@/types/model';
 import type { PrismaClient } from '@prisma/client';
-import type { $Member } from './member';
 import { Database } from '@/services/database.server';
 import { PrismockClient } from 'prismock';
-import { __Member, MemberId, Subject } from './member';
+import { $Member, MemberId, Subject } from './member';
 
 const memberDataRaw = {
   id: '0188c0f2-8e47-11ec-b909-0242ac120002',

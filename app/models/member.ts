@@ -152,9 +152,7 @@ const normalizer = ((client, builder) => ({
 
 /// Model ///
 
-export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class Member<Mode extends ModelMode = M> {
-  public static __prisma = client;
-
+export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
   private dbError = Database.dbErrorWith(metadata);
   private client;
   public declare __struct: ThisModelImpl<Mode>;
@@ -177,6 +175,7 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
     const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, n.schemaResolved);
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
+    this.client = __prisma;
   }
 
   public static with(client: PrismaClient) {
@@ -288,25 +287,7 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
     } satisfies ModelBuilder<ThisModel>;
   }
 
-  public static fromWithResolved(id: MemberId): DatabaseResult<Member<'WITH_RESOLVED'>> {
-    return Database.transformResult(
-      client.member.findUniqueOrThrow({
-        where: { id },
-        include: includeKeys2select(includeKeys),
-      }),
-    )
-      .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(
-        (
-          { MemberStatus, MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover, ...rest },
-        ) => new Member(
-          rest,
-          { MemberStatus: MemberStatus!, MemberBase: MemberBase!, MemberSensitive: MemberSensitive!, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatusAsUpdaterToHasDeleted, MemberStatusAsUpdaterToLastRenewalDate, PaymentAsPayer, PaymentAsReceiver, PaymentAsApprover },
-        ),
-      );
-  }
-
-  public resolveRelation(): ModeWithDefault<Mode, DatabaseResult<Member<'WITH_RESOLVED'>>> {
+  public resolveRelation(): ModelResolver<Mode, ThisModel> {
     return matchWithDefault(
       this.__rawResolved,
       () => $Member.with(this.client).fromWithResolved(this.data.id),
@@ -329,7 +310,6 @@ export const __Member = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient)
       .mapErr(this.dbError.transformPrismaBridge('delete'))
       .map(() => undefined);
   }
-}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
 
   public hoge() { }
 }

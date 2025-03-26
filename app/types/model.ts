@@ -2,6 +2,7 @@ import type { $Member } from '@/models/member';
 import type { DatabaseErrorWith, DatabaseResult } from '@/types/database';
 import type { Nullable } from '@/types/utils';
 import type { Prisma, PrismaClient } from '@prisma/client';
+import type { Result } from 'neverthrow';
 
 export interface ModelMetadata<
   M extends Uncapitalize<Prisma.ModelName>,
@@ -27,16 +28,12 @@ export type ModelResolver<
 
 export interface Model<
   Mode extends ModelMode,
-  _Metadata extends NoInfer<ModelMetadata<any, 'CATCH_ALL'>>,
-  SchemaRaw,
-  Schema,
-  SchemaResolvedRaw,
-  SchemaResolved,
+  ModelGen extends AnyModelGenerator,
 > {
-  __raw: SchemaRaw;
-  data: Schema;
-  __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
-  dataResolved: ModeWithResolved<Mode, SchemaResolved>;
+  __raw: ModelGen extends ModelGenerator<any, infer SR, any, any, any> ? SR : never;
+  data: ModelGen extends ModelGenerator<any, any, infer S, any, any> ? S : never;
+  __rawResolved?: ModeWithResolved<Mode, ModelGen extends ModelGenerator<any, any, any, infer SR, any> ? SR : never>;
+  dataResolved?: ModeWithResolved<Mode, ModelGen extends ModelGenerator<any, any, any, any, infer S> ? S : never>;
 
   resolveRelation?: () => any;
   update?: (...args: any[]) => DatabaseResult<AnyModel>;
@@ -119,22 +116,16 @@ export type FetchModelMany<
 /**
  * __M = (client) => M のときの M
  */
-export type ModelGenerator<
-  Mode extends ModelMode,
-  Metadata extends ModelMetadata<any, 'CATCH_ALL'>,
-  SchemaRaw,
-  Schema,
-  SchemaResolvedRaw,
-  SchemaResolved,
-> = (client: PrismaClient) => {
-  new(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, any>): Model<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-
+export interface ModelGenerator<
+  _Metadata extends ModelMetadata<any, 'CATCH_ALL'>,
+  _SchemaRaw,
+  _Schema,
+  _SchemaResolvedRaw,
+  _SchemaResolved,
+> {
   // static methods //
 
   __prisma: PrismaClient;
-  from: (id: any) => DatabaseResult<Model<'DEFAULT', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
-  fromWithResolved?: (id: any) => DatabaseResult<Model<'WITH_RESOLVED', Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>;
-};
 
   with: (client: PrismaClient) => any;
 }
@@ -163,49 +154,49 @@ export type ExtractModelGen<T>
     : never;
 
 /**
- * M: ModelGenerator<Mode, Metadata, SchemaRaw> のときの Mode
+ * M: Model<Mode, _> のときの Mode
  */
-export type ModelModeOf<T>
-  = T extends ModelGenerator<infer M, any, any, any, any, any>
+export type ModelModeOf<T extends AnyModel>
+  = ExtractModelStruct<T> extends Model<infer M, any>
     ? M
     : never;
 
 /**
- * M: ModelGenerator<Mode, Metadata, SchemaRaw> のときの Metadata
+ * M: Model<any, ModelGenerator<Metadata, ...>> のときの Metadata
  */
-export type ModelMetadataOf<T>
-  = T extends ModelGenerator<any, infer M, any, any, any, any>
+export type ModelMetadataOf<T extends AnyModel>
+  = ExtractModelGen<ExtractModelStruct<T>> extends ModelGenerator<infer M, any, any, any, any>
     ? M
     : never;
 
 /**
- * M: ModelGenerator<Mode, Metadata, SchemaRaw> のときの SchemaRaw
+ * M: Model<any, ModelGenerator<_, SchemaRaw, ...>> のときの SchemaRaw
  */
-export type ModelSchemaRawOf<T>
-  = T extends ModelGenerator<any, any, infer SR, any, any, any>
+export type ModelSchemaRawOf<T extends AnyModel>
+  = ExtractModelGen<ExtractModelStruct<T>> extends ModelGenerator<any, infer SR, any, any, any>
     ? SR
     : never;
 
 /**
- * M: ModelGenerator<Mode, Metadata, SchemaRaw, Schema> のときの Schema
+ * M: Model<any, ModelGenerator<_, _, Schema, ...>> のときの Schema
  */
-export type ModelSchemaOf<T>
-  = T extends ModelGenerator<any, any, any, infer S, any, any>
+export type ModelSchemaOf<T extends AnyModel>
+  = ExtractModelGen<ExtractModelStruct<T>> extends ModelGenerator<any, any, infer S, any, any>
     ? S
     : never;
 
 /**
- * M: ModelGenerator<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw> のときの S
+ * M: Model<any, ModelGenerator<_, _, _, SchemaResolvedRaw, ...>> のときの SchemaResolvedRaw
  */
-export type ModelSchemaResolvedRawOf<T>
-  = T extends ModelGenerator<any, any, any, any, infer RR, any>
-    ? RR
+export type ModelSchemaResolvedRawOf<T extends AnyModel>
+  = ExtractModelGen<ExtractModelStruct<T>> extends ModelGenerator<any, any, any, infer SR, any>
+    ? SR
     : never;
 
 /**
- * M: ModelGenerator<Mode, Metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> のときの S
+ * M: Model<any, ModelGenerator<_, _, _, _, SchemaResolved>> のときの SchemaResolved
  */
-export type ModelSchemaResolvedOf<T>
-  = T extends ModelGenerator<any, any, any, any, any, infer R>
-    ? R
+export type ModelSchemaResolvedOf<T extends AnyModel>
+  = ExtractModelGen<ExtractModelStruct<T>> extends ModelGenerator<any, any, any, any, infer S>
+    ? S
     : never;
