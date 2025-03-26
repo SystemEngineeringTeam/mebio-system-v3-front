@@ -225,22 +225,21 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
           }),
         )
           .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromWithResolved'))
-          // FIXME: もっと良い書き方あるかも
-          .map(({ MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, ...rest }) => {
-            // NOTE: Nullable になりうる値は, Prisma の `Member` モデルに関連する 1:1 のスキーマ定義を参考のこと.
-            //  ref: https://github.com/SystemEngineeringTeam/meibo-system-v3/blob/86d29333aae5e7c0afe889f36081b622959d07a7/prisma/schema.prisma#L26-L33
+        // FIXME: もっと良い書き方あるかも
+          .map(({ MemberBase, MemberSensitive, MemberStatus, ...rest }) => {
+            // NOTE:
+            //  Nullable なモデルは, Prisma の `Member` モデルに関連する 1:1 のスキーマ定義を参考のこと.
+            //  ただし, `SchemaResolvedRaw` の Nullable は除く.
+            //  refs:
+            //   - https://github.com/SystemEngineeringTeam/meibo-system-v3/blob/86d29333aae5e7c0afe889f36081b622959d07a7/prisma/schema.prisma#L26-L33
+            //   - https://github.com/SystemEngineeringTeam/meibo-system-v3/blob/86d29333aae5e7c0afe889f36081b622959d07a7/app/models/member.ts#L69-L72
             if (MemberBase == null) throw new Error('不正なデータ: `MemberBase` が取得できませんでした');
             if (MemberSensitive == null) throw new Error('不正なデータ: `MemberSensitive` が取得できませんでした');
-            if (MemberActive == null) throw new Error('不正なデータ: `MemberActive` が取得できませんでした');
-            if (MemberActiveInternal == null) throw new Error('不正なデータ: `MemberActiveInternal` が取得できませんでした');
-            if (MemberActiveExternal == null) throw new Error('不正なデータ: `MemberActiveExternal` が取得できませんでした');
-            if (MemberAlumni == null) throw new Error('不正なデータ: `MemberAlumni` が取得できませんでした');
             if (MemberStatus == null) throw new Error('不正なデータ: `MemberStatus` が取得できませんでした');
-            const d = { MemberBase, MemberSensitive, MemberActive, MemberActiveInternal, MemberActiveExternal, MemberAlumni, MemberStatus, ...rest };
+            const d = { MemberBase, MemberSensitive, MemberStatus, ...rest };
 
             return separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved(d);
           });
-
         return rawData.map(buildRawData(__build).withResolved);
       },
       fetchMany: (args) => {
