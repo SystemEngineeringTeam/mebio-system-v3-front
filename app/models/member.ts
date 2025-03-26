@@ -217,6 +217,17 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
 
         return rawData.map(buildRawData(__build).default);
       },
+      fromSubject: (subject: Subject) => {
+        const rawData = Database.transformResult(
+          client.member.findUniqueOrThrow({
+            where: { subject },
+          }),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromSubject'))
+          .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
+
+        return rawData.map(buildRawData(__build).default);
+      },
       fromWithResolved: (id: MemberId) => {
         const rawData = Database.transformResult(
           client.member.findUniqueOrThrow({
@@ -233,6 +244,24 @@ export class $Member<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImp
             //  refs:
             //   - https://github.com/SystemEngineeringTeam/meibo-system-v3/blob/86d29333aae5e7c0afe889f36081b622959d07a7/prisma/schema.prisma#L26-L33
             //   - https://github.com/SystemEngineeringTeam/meibo-system-v3/blob/86d29333aae5e7c0afe889f36081b622959d07a7/app/models/member.ts#L69-L72
+            if (MemberBase == null) throw new Error('不正なデータ: `MemberBase` が取得できませんでした');
+            if (MemberSensitive == null) throw new Error('不正なデータ: `MemberSensitive` が取得できませんでした');
+            if (MemberStatus == null) throw new Error('不正なデータ: `MemberStatus` が取得できませんでした');
+            const d = { MemberBase, MemberSensitive, MemberStatus, ...rest };
+
+            return separateRawData<ThisModel, IncludeKey>(includeKeys).withResolved(d);
+          });
+        return rawData.map(buildRawData(__build).withResolved);
+      },
+      fromSubjectWithResolved: (subject: Subject) => {
+        const rawData = Database.transformResult(
+          client.member.findUniqueOrThrow({
+            where: { subject },
+            include: includeKeys2select(includeKeys),
+          }),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromSubjectWithResolved'))
+          .map(({ MemberBase, MemberSensitive, MemberStatus, ...rest }) => {
             if (MemberBase == null) throw new Error('不正なデータ: `MemberBase` が取得できませんでした');
             if (MemberSensitive == null) throw new Error('不正なデータ: `MemberSensitive` が取得できませんでした');
             if (MemberStatus == null) throw new Error('不正なデータ: `MemberStatus` が取得できませんでした');
