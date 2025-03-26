@@ -58,10 +58,12 @@ export default antfu({
       // https://typescript-eslint.io/rules/dot-notation/
       'dot-notation': 'off',
       'ts/dot-notation': 'error',
+
     },
   },
   rules: {
     'antfu/no-top-level-await': 'off',
+    'test/prefer-lowercase-title': 'off',
   },
   react: {
     overrides: {

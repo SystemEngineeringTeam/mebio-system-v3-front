@@ -40,7 +40,7 @@
     "destr": "^2.0.3",
     "isbot": "^4.1.0",
     "lucide-react": "^0.482.0",
-    "neverthrow": "^8.1.1",
+    "neverthrow": "^8.2.0",
     "prisma": "^6.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

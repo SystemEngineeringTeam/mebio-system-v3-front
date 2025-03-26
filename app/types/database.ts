@@ -1,5 +1,4 @@
-import type { $Member } from '@/models/member';
-import type { ModelEntityOf, ModelMetadata } from '@/types/model';
+import type { ModelBuilderType, ModelMetadata } from '@/types/model';
 import type { Nullable } from '@/types/utils';
 import type { Prisma } from '@prisma/client';
 import type { ResultAsync } from 'neverthrow';
@@ -18,11 +17,7 @@ export type PrismaClientError =
   | Prisma.PrismaClientInitializationError
   | Error;
 
-export type DatabaseErrorDetail =
-  | {
-    type: 'PERMISSION_DENIED';
-    _raw: { operator: ModelEntityOf<$Member> };
-  }
+export type PrismaBridgeErrorDetail =
   | {
     type: keyof typeof clientKnownErrorCode | 'UNKNOWN_REQUEST_ERROR';
     _raw: Prisma.PrismaClientKnownRequestError;
@@ -44,11 +39,33 @@ export type DatabaseErrorDetail =
     _raw: Error;
   };
 
-export type DatabaseError = {
+export type ModelBuildErrorDetail =
+  | {
+    type: 'PERMISSION_DENIED';
+    detail: {
+      builder: ModelBuilderType;
+    };
+  }
+  | {
+    type: 'UNKNOWN_ERROR';
+  };
+
+export interface DatabaseError {
   metadata: ModelMetadata<any>;
   caller: string;
   message: string;
   hint: Nullable<string>;
-} & DatabaseErrorDetail;
+  error:
+    | {
+      type: 'PRISMA_BRIDGE_ERROR';
+      detail: PrismaBridgeErrorDetail;
+    }
+    | {
+      type: 'MODEL_BUILD_ERROR';
+      detail: ModelBuildErrorDetail;
+    };
+}
 
-export type DatabaseResult<S> = ResultAsync<S, DatabaseError>;
+export type DatabaseErrorWith<T extends DatabaseError['error']['type'] = DatabaseError['error']['type']>
+  = DatabaseError & { error: Extract<DatabaseError['error'], { type: T }> };
+export type DatabaseResult<S, E = DatabaseError> = ResultAsync<S, E>;

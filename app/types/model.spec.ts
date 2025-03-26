@@ -1,6 +1,18 @@
-import type { Model, ModelEntityOf, ModelGenerator, ModelMetadata, ModelMetadataOf, ModelMode, ModelModeOf, ModelSchemaRawOf, ModelSchemaResolvedOf, ModelSchemaResolvedRawOf } from '@/types/model';
+import type { $Member } from '@/models/member';
+import type { DatabaseResult } from '@/types/database';
+import type { BuildModelResult, Model, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMetadataOf, ModelMode, ModelModeOf, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelSchemaResolvedOf, ModelSchemaResolvedRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
-import type { PrismaClient } from '@prisma/client';
+import type {
+  PrismaClient,
+} from '@prisma/client';
+import { matchWithResolved } from '@/utils/model';
+import { ok } from 'neverthrow';
+
+const _metadata = {
+  displayName: 'テストモデル',
+  modelName: 'member',
+  primaryKeyName: 'id',
+} as const satisfies ModelMetadata<'member'>;
 
 interface SchemaRaw {
   a: symbol;
@@ -21,25 +33,112 @@ interface SchemaResolved {
   };
 }
 
-const _metadata = {
-  displayName: '表示名',
-  modelName: 'モデル名',
-  primaryKeyName: 'プライマリキー名',
-} as const satisfies ModelMetadata<any, 'CATCH_ALL'>;
+/// ModelTypes ///
 
-// eslint-disable-next-line func-style, antfu/top-level-function
-const __TestModel = <M extends ModelMode = 'DEFAULT'>(_client: PrismaClient) => class Member<_Mode extends ModelMode = M> {
-  // empty
-};
+type ModelGen = ModelGenerator<typeof _metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
+type ThisModel<M extends ModelMode = 'DEFAULT'> = $TestModel<M>;
+interface ThisModelVariants {
+  DEFAULT: ThisModel;
+  WITH_RESOLVED: ThisModel<'WITH_RESOLVED'>;
+}
+type RawData = ModelRawData4build<ThisModel>;
 
-export type $TestModel<M extends ModelMode = 'DEFAULT'> = typeof __TestModel<M> & ModelGenerator<M, typeof _metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+/// Normalizer ///
+
+const normalizer = ((_, __) => ({
+  schema: (__raw) => ({} as Schema),
+  schemaResolved: (__rawResolved) => ({} as SchemaResolved),
+})) satisfies ModelNormalizer<ThisModel>;
+
+/// Model ///
+
+export class $TestModel<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
+  public declare __struct: ThisModelImpl<Mode>;
+  public declare __variants: ThisModelVariants;
+
+  public __raw: SchemaRaw;
+  public data: Schema;
+  public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
+  public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
+
+  private constructor(
+    public __prisma: PrismaClient,
+    { __raw, __rawResolved }: RawData,
+    private builder: ModelBuilderType,
+  ) {
+    const n = normalizer(__prisma, this.builder);
+
+    this.__raw = __raw;
+    this.data = n.schema(__raw);
+    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, n.schemaResolved);
+    this.__rawResolved = rawResolved;
+    this.dataResolved = dataResolved;
+  }
+
+  public static with(client: PrismaClient) {
+    const __toUnwrappedInstances = ((rawData, builder) => ({
+      default: new $TestModel(client, rawData, builder),
+      withResolved: new $TestModel<'WITH_RESOLVED'>(client, rawData, builder),
+    })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
+
+    const toInstances = (
+      (rawData, builder) => ok(__toUnwrappedInstances(rawData, builder))
+    ) satisfies ModelInstances<ThisModel>;
+
+    const __build = {
+      __with: toInstances,
+      by: (rawData, memberAsBuilder) => toInstances(rawData, { type: 'MEMBER', member: memberAsBuilder }),
+      bySelf: (rawData) => toInstances(rawData, { type: 'SELF' }),
+    } satisfies ModelBuilderInternal<ThisModel>;
+
+    return { __build };
+  }
+
+  public resolveRelation(): ModelResolver<Mode, ThisModel> {
+    throw new Error('Method not implemented.');
+  }
+
+  public update(_data: Partial<Schema>): DatabaseResult<ThisModel> {
+    throw new Error('Method not implemented.');
+  }
+
+  public delete(_operator: ThisModel): DatabaseResult<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  public hoge() { }
+}
 
 describe('モデルまわりの Type Utilities', () => {
-  it('モデルの状態を取得できる', () => {
-    expectTypeOf<ModelModeOf<$TestModel>>().toEqualTypeOf<'DEFAULT'>();
+  const TestModel = $TestModel.with({} as PrismaClient);
+  const builder: ModelBuilderType = { type: 'ANONYMOUS' };
+  const rawData = {} as RawData;
+  const { default: mDefault, withResolved: mWithResolved } = TestModel.__build.__with(rawData, builder)._unsafeUnwrap();
+
+  it('`__build``DEFAULT` や `WITH_RESOLVED` が推論されるか.', () => {
+    expectTypeOf(mDefault.dataResolved).toEqualTypeOf<undefined>();
+    expectTypeOf(mWithResolved.dataResolved).toEqualTypeOf<SchemaResolved>();
   });
-  it('エンティティを取得できる', () => {
-    expectTypeOf<ModelEntityOf<$TestModel>>().toEqualTypeOf<Model<'DEFAULT', typeof _metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>>();
+  it('モデルのモードを取得できる', () => {
+    expectTypeOf<ModelModeOf<typeof mDefault>>().toEqualTypeOf<'DEFAULT'>();
+    // FIXME: これが通るようにしたい.  ThisModel<'WITH_RESOLVED'> は AnyModel<'DEFAULT'> 制約を満たさないよう.  たぶん AnyModel にモードが伝わっていないのかも.
+    // expectTypeOf<ModelModeOf<typeof mWithResolved>>().toEqualTypeOf<'WITH_RESOLVED'>();
+  });
+  it('モデル内の型を取得できる', () => {
+    expectTypeOf<ThisModel['data']>().toEqualTypeOf<Schema>();
+    expectTypeOf<ThisModel['dataResolved']>().toEqualTypeOf<undefined>();
+
+    type Expected = DatabaseResult<{
+      build: (builder: ModelBuilderType) => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+      buildBy: (memberAsBuilder: $Member) => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+      buildBySelf: () => BuildModelResult<ThisModel<'WITH_RESOLVED'>>;
+    }>;
+    expectTypeOf<ReturnType<ThisModel['resolveRelation']>>().toEqualTypeOf<Expected>();
+
+    expectTypeOf<ThisModel<'WITH_RESOLVED'>['data']>().toEqualTypeOf<Schema>();
+    expectTypeOf<ThisModel<'WITH_RESOLVED'>['dataResolved']>().toEqualTypeOf<SchemaResolved>();
+    expectTypeOf<ReturnType<ThisModel<'WITH_RESOLVED'>['resolveRelation']>>().toEqualTypeOf<never>();
   });
   it('メタデータを取得できる', () => {
     expectTypeOf<ModelMetadataOf<$TestModel>>().toEqualTypeOf<typeof _metadata>();

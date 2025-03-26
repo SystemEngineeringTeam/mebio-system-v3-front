@@ -1,7 +1,7 @@
 /* eslint-disable unused-imports/no-unused-vars */
 
 import type { $Member } from '@/models/member';
-import type { ModelEntityOf, ModelSchemaOf } from '@/types/model';
+import type { ModelSchemaOf } from '@/types/model';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import type { ReactElement } from 'react';
 import { MemberId } from '@/models/member';
@@ -37,13 +37,13 @@ function MemberCardInfo({
 }
 
 function MemberCard(
-  Member: ModelEntityOf<$Member>, // ← 部員自身の操作が必要なので, ModelEntityOf<$Member>.
+  Member: $Member, // ← 部員自身の操作が必要なので, `$Member` を使う.
 ): ReactElement {
   const { update } = Member;
 
   // ここは, SWR とかなんでも使ってどうぞ.
   const [member, updateMember, isPending] = useActionState(async () => {
-    const newMember = await update(Member, { updatedAt: new Date() });
+    const newMember = await update({ updatedAt: new Date() });
 
     if (newMember.isErr()) {
       // エラーに対するインタラクションなど

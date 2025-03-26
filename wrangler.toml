@@ -1,9 +1,13 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "meibo-system-v3"
-compatibility_date = "2024-12-20"
+compatibility_date = "2025-03-21"
 pages_build_output_dir = "./build/client"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "meibo-system-v3-db"
 database_id = "cf2c7299-068d-400a-8996-185781cd8763"
+
+# ref: https://zenn.dev/gemcook/articles/cloudflare-workers_logs#logs-%E3%81%AE%E8%A8%AD%E5%AE%9A
+[observability]
+enabled = true

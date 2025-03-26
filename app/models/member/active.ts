@@ -2,18 +2,19 @@ import type { $Member } from '@/models/member';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { DatabaseResult } from '@/types/database';
-import type { ModelEntityOf, ModelGenerator, ModelMetadata, ModelMode, ModelSchemaRawOf, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Nullable, Override } from '@/types/utils';
-import type { MemberDetailActive } from '@/utils/member';
 import type {
+  Prisma,
   PrismaClient,
   MemberActive as SchemaRaw,
 } from '@prisma/client';
 import { MemberId } from '@/models/member';
 import { Database } from '@/services/database.server';
-import { toMemberDetailActive } from '@/utils/member';
-import { includeKeys2select, matchWithResolved } from '@/utils/model';
-import { ResultAsync } from 'neverthrow';
+import { type MemberDetailActive, toMemberDetailActive } from '@/utils/member';
+import { buildRawData, fillPrismaSkip, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
+import { err, ok, ResultAsync } from 'neverthrow';
+import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 /// Metadata ///
@@ -40,6 +41,10 @@ type Schema = Override<
   }
 >;
 
+type IncludeKey = keyof Prisma.MemberActiveInclude;
+const includeKeys = ['Member'] as const satisfies IncludeKey[];
+const includeKeysRelated = ['MemberActiveInternal', 'MemberActiveExternal'] as const;
+
 interface SchemaResolvedRaw {
   Member: ModelSchemaRawOf<$Member>;
   MemberActiveInternal: Nullable<ModelSchemaRawOf<$MemberActiveInternal>>;
@@ -48,90 +53,207 @@ interface SchemaResolvedRaw {
 
 type SchemaResolved = {
   _parent: {
-    Member: () => ModelEntityOf<$Member>;
+    Member: () => BuildModelResult<$Member>;
   };
 } & MemberDetailActive;
 
+/// ModelTypes ///
+
+type ModelGen = ModelGenerator<typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+type ThisModelImpl<M extends ModelMode = 'DEFAULT'> = Model<M, ModelGen>;
+type ThisModel<M extends ModelMode = 'DEFAULT'> = $MemberActive<M>;
+interface ThisModelVariants {
+  DEFAULT: ThisModel;
+  WITH_RESOLVED: ThisModel<'WITH_RESOLVED'>;
+}
+type RawData = ModelRawData4build<ThisModel>;
+
+/// Normalizer ///
+
+const normalizer = ((client, builder) => ({
+  schema: (__raw) => ({
+    ...__raw,
+    memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
+    grade: zGrades.parse(__raw.grade),
+  }),
+  schemaResolved: (__rawResolved) => {
+    const { models } = new Database(client);
+    const { Member, MemberActiveExternal, MemberActiveInternal } = __rawResolved;
+
+    return {
+      _parent: {
+        Member: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(Member)).build(builder),
+      },
+      ...toMemberDetailActive(client, builder, { MemberActiveExternal, MemberActiveInternal }),
+    };
+  },
+})) satisfies ModelNormalizer<ThisModel>;
+
 /// Model ///
 
-export const __MemberActive = (<M extends ModelMode = 'DEFAULT'>(client: PrismaClient) => class MemberActive<Mode extends ModelMode = M> {
-  public static __prisma = client;
+export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisModelImpl<Mode> {
   private dbError = Database.dbErrorWith(metadata);
+  private client;
+  public declare __struct: ThisModelImpl<Mode>;
+  public declare __variants: ThisModelVariants;
 
   public __raw: SchemaRaw;
   public data: Schema;
   public __rawResolved: ModeWithResolved<Mode, SchemaResolvedRaw>;
   public dataResolved: ModeWithResolved<Mode, SchemaResolved>;
 
-  public constructor(__raw: SchemaRaw, __rawResolved?: ModeWithResolved<Mode, SchemaResolvedRaw>) {
+  private constructor(
+    public __prisma: PrismaClient,
+    { __raw, __rawResolved }: RawData,
+    private builder: ModelBuilderType,
+  ) {
+    const n = normalizer(__prisma, this.builder);
+
     this.__raw = __raw;
-    this.data = {
-      ...__raw,
-      memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
-      grade: zGrades.parse(__raw.grade),
-    };
-
-    const { models } = new Database(client);
-    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(
-      __rawResolved,
-      (r) => ({
-        _parent: {
-          Member: () => new models.Member(r.Member),
-        },
-        ...toMemberDetailActive(client, { MemberActiveInternal: r.MemberActiveInternal, MemberActiveExternal: r.MemberActiveExternal }),
-      }),
-    );
-
+    this.data = n.schema(__raw);
+    const { rawResolved, dataResolved } = matchWithResolved<Mode, SchemaResolvedRaw, SchemaResolved>(__rawResolved, n.schemaResolved);
     this.__rawResolved = rawResolved;
     this.dataResolved = dataResolved;
+    this.client = __prisma;
   }
 
-  public static from(id: MemberId): DatabaseResult<MemberActive<'DEFAULT'>> {
+  public static with(client: PrismaClient) {
+    const __toUnwrappedInstances = ((rawData, builder) => ({
+      default: new $MemberActive(client, rawData, builder),
+      withResolved: new $MemberActive<'WITH_RESOLVED'>(client, rawData, builder),
+    })) satisfies ModelUnwrappedInstances__DO_NOT_EXPOSE<ThisModel>;
+
+    const buildErr = Database.dbErrorWith(metadata).transformBuildModel('toInstances');
+    const toInstances = ((rawData, builder) => match(builder)
+      .with({ type: 'ANONYMOUS' }, () => err(buildErr({ type: 'PERMISSION_DENIED', detail: { builder } } as const)))
+      .with({ type: 'SELF' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .with({ type: 'MEMBER' }, () => ok(__toUnwrappedInstances(rawData, builder)))
+      .exhaustive()
+    ) satisfies ModelInstances<ThisModel>;
+
+    const __build = {
+      __with: toInstances,
+      by: (rawData, memberAsBuilder) => toInstances(rawData, { type: 'MEMBER', member: memberAsBuilder }),
+      bySelf: (rawData) => toInstances(rawData, { type: 'SELF' }),
+    } satisfies ModelBuilderInternal<ThisModel>;
+
+    return {
+      __build,
+      from: (memberId: MemberId) => {
+        const rawData = Database.transformResult(
+          client.memberActive.findUniqueOrThrow({
+            where: { memberId },
+          }),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('from'))
+          .map(separateRawData<ThisModel, IncludeKey>(includeKeys).default);
+
+        return rawData.map(buildRawData(__build).default);
+      },
+      fromWithResolved: (memberId: MemberId) => {
+        const rFetchedData = ResultAsync.combine([
+          Database.transformResult(
+            client.memberActive.findUniqueOrThrow({
+              where: { memberId },
+            }),
+          ),
+          Database.transformResult(
+            client.member.findUniqueOrThrow({
+              where: { id: memberId },
+              include: includeKeys2select(includeKeysRelated),
+            }),
+          ),
+        ])
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fromWithResolved'));
+
+        return rFetchedData.map(
+          (
+            [memberActive, { MemberActiveInternal, MemberActiveExternal, ...Member }],
+          ) => buildRawData(__build).withResolved(
+            {
+              __raw: memberActive,
+              __rawResolved: { Member, MemberActiveInternal, MemberActiveExternal },
+            },
+          ),
+        );
+      },
+      fetchMany: (args) => {
+        const rawDataList = Database.transformResult(
+          client.memberActive.findMany(args),
+        )
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
+          .map((r) => r.map(separateRawData<ThisModel, IncludeKey>(includeKeys).default));
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).default(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).default(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).default(r).buildBySelf()),
+        }));
+      },
+      fetchManyWithResolved: (args) => {
+        const rFetchedData = ResultAsync.combine([
+          Database.transformResult(
+            client.memberActive.findMany({
+              ...args,
+              orderBy: { memberId: 'asc' },
+            }),
+          ),
+          Database.transformResult(
+            client.member.findMany({
+              orderBy: { id: 'asc' },
+              include: includeKeys2select(includeKeysRelated),
+            }),
+          ),
+        ])
+          .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchManyWithResolved'));
+
+        const rawDataList = rFetchedData.map(([memberBase, members]) => {
+          const membersMap = new Map<string, SchemaResolvedRaw>();
+
+          members.forEach((m) => {
+            const { MemberActiveInternal, MemberActiveExternal, ...Member } = m;
+            membersMap.set(m.id, { Member, MemberActiveInternal, MemberActiveExternal });
+          });
+
+          return memberBase.map((r) => {
+            const resolved = membersMap.get(r.memberId);
+            if (resolved == null) throw new Error('不正なデータ: `Member` が取得できませんでした');
+            return { __raw: r, __rawResolved: resolved };
+          });
+        });
+
+        return rawDataList.map((ms) => ({
+          build: (builder) => ms.map((r) => buildRawData(__build).withResolved(r).build(builder)),
+          buildBy: (memberAsBuilder) => ms.map((r) => buildRawData(__build).withResolved(r).buildBy(memberAsBuilder)),
+          buildBySelf: () => ms.map((r) => buildRawData(__build).withResolved(r).buildBySelf()),
+        }));
+      },
+    } satisfies ModelBuilder<ThisModel>;
+  }
+
+  public resolveRelation(): ModelResolver<Mode, ThisModel> {
+    return matchWithDefault(
+      this.__rawResolved,
+      () => $MemberActive.with(this.client).fromWithResolved(this.data.memberId),
+    );
+  }
+
+  public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
     return Database.transformResult(
-      client.memberActive.findUniqueOrThrow({
-        where: { memberId: id },
-      }),
+      this.client.memberActive.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
     )
-      .mapErr(Database.dbErrorWith(metadata).transform('from'))
-      .map((data) => new MemberActive(data));
+      .mapErr(this.dbError.transformPrismaBridge('update'))
+      .map((r) => buildRawData($MemberActive.with(this.client).__build).default(schemaRaw2rawData<$MemberActive>(r)))
+      .map((r) => r.build(this.builder)._unsafeUnwrap());
   }
 
-  public static fromWithResolved(id: MemberId): DatabaseResult<MemberActive<'WITH_RESOLVED'>> {
-    return ResultAsync.combine([
-      Database.transformResult(
-        client.memberActive.findUniqueOrThrow({
-          where: { memberId: id },
-        }),
-      ),
-      Database.transformResult(
-        client.member.findUniqueOrThrow({
-          where: { id },
-          include: includeKeys2select(['MemberActiveInternal', 'MemberActiveExternal']),
-        }),
-      ),
-    ])
-      .mapErr(Database.dbErrorWith(metadata).transform('fromWithResolved'))
-      .map(
-        (
-          [memberActive, { MemberActiveInternal, MemberActiveExternal, ...Member }],
-        ) => new MemberActive(
-          memberActive,
-          { Member, MemberActiveInternal, MemberActiveExternal },
-        ),
-      );
+  public delete(): DatabaseResult<void> {
+    return Database.transformResult(
+      this.client.memberActive.delete({ where: { memberId: this.data.memberId } }),
+    )
+      .mapErr(this.dbError.transformPrismaBridge('delete'))
+      .map(() => undefined);
   }
 
-  public resolveRelation(): DatabaseResult<SchemaResolved> {
-    throw new Error('Method not implemented.');
-  }
-
-  public update(_operator: ModelEntityOf<$Member>, _data: Partial<Schema>): DatabaseResult<MemberActive> {
-    throw new Error('Method not implemented.');
-  }
-
-  public delete(_operator: ModelEntityOf<$Member>): DatabaseResult<void> {
-    throw new Error('Method not implemented.');
-  }
-}) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
-
-export type $MemberActive<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __MemberActive<M>;
+  public hoge() { }
+}
