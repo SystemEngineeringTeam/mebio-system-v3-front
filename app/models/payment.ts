@@ -226,3 +226,6 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
   public hoge() { }
 }
+) satisfies ModelGenerator<any, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved>;
+
+export type $Payment<M extends ModelMode = 'DEFAULT'> = ModelGenerator<M, typeof metadata, SchemaRaw, Schema, SchemaResolvedRaw, SchemaResolved> & typeof __Payment<M>;
