@@ -4,7 +4,6 @@ import type { $MemberAlumni } from '@/models/member/alumni';
 import type { $MemberBase } from '@/models/member/base';
 import type { ModelSchemaOf } from '@/types/model';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
-import type { TypedAwaitProps } from 'remix-typedjson';
 import { MemberId } from '@/models/member';
 import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import MemberPage from '@/pages/MemberPage';
@@ -48,10 +47,9 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     );
   const memberBase = member.dataResolved.member.Base().match(
     (m) => m,
-    Database.unwrapToResponse
+    Database.unwrapToResponse,
   );
 
-  
   if (member.dataResolved.member.detail.type === 'ACTIVE') {
     const memberDetail = member.dataResolved.member.detail.Data().match(
       (m) => m,
