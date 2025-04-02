@@ -19,7 +19,10 @@ export default function AdminPage({ members }: { members: AdminLoaderData }) {
               <td className="border border-gray-300 p-2 text-lg">
                 <img alt="icon" className="mx-auto size-12" src={member.MemberBase?.iconUrl} />
               </td>
-              <td className="border border-gray-300 p-2 text-lg">{member.MemberBase?.lastName}{member.MemberBase?.firstName}</td>
+              <td className="border border-gray-300 p-2 text-lg">
+                {member.MemberBase?.lastName}
+                {member.MemberBase?.firstName}
+              </td>
               <td className="border border-gray-300 p-2 text-lg">{member.MemberActive?.grade}</td>
             </tr>
           ))}
