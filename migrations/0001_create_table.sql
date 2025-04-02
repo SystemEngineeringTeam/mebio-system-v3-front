@@ -154,18 +154,20 @@ CREATE UNIQUE INDEX "Snapshot_id_key" ON "Snapshot"("id");
 -- Seed
 INSERT INTO "Member" ("id", "subject", "email", "securityRole", "updatedAt") VALUES
 ('0188c0f2-8e47-11ec-b909-0242ac120002', 'Mathematics', 'math@example.com', 'OWNER', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'USER', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'USER', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'MEMBER', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'MEMBER', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberBase
 INSERT INTO "MemberBase" ("memberId", "iconUrl", "firstName", "lastName", "firstNameKana", "lastNameKana", "updatedAt") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'http://example.com/icon1.png', 'Taro', 'Yamada', 'タロウ', 'ヤマダ', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120003', 'http://example.com/icon2.png', 'Hanako', 'Tanaka', 'ハナコ', 'タナカ', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'http://example.com/icon3.png', 'Kenji', 'Suzuki', 'ケンジ', 'スズキ', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'https://placehold.jp/3d4070/ffffff/150x150.png?text=taro', 'Taro', 'Yamada', 'タロウ', 'ヤマダ', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120003', 'https://placehold.jp/3d4070/ffffff/150x150.png?text=tanaka', 'Hanako', 'Tanaka', 'ハナコ', 'タナカ', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'https://placehold.jp/3d4070/ffffff/150x150.png?text=suzuki', 'Kenji', 'Suzuki', 'ケンジ', 'スズキ', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberActive
 INSERT INTO "MemberActive" ("memberId", "grade", "updatedAt") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'B1', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'B1', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120003', 'B2', CURRENT_TIMESTAMP),
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'B3', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberActiveInternal
 INSERT INTO "MemberActiveInternal" ("memberId", "studentId", "role", "updatedAt") VALUES
@@ -187,3 +189,7 @@ INSERT INTO "MemberStatus" ("memberId", "hasDeleted", "lastRenewalDate", "update
 ('0188c0f2-8e47-11ec-b909-0242ac120002', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002'),
 ('0188c0f2-8e47-11ec-b909-0242ac120003', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002'),
 ('0188c0f2-8e47-11ec-b909-0242ac120004', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002');
+
+-- Seed Data for MemberAlumni
+INSERT INTO "MemberAlumni" ("memberId", "graduatedYear", "oldRole", "updatedAt") VALUES
+('0188c0f2-8e47-11ec-b909-0242ac120002', 2023, '会長', CURRENT_TIMESTAMP);
