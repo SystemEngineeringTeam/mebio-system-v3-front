@@ -18,5 +18,5 @@ export async function loader({ context }: LoaderFunctionArgs) {
 export default function Index() {
   const { members } = useTypedLoaderData<typeof loader>();
 
-  return <MemberListPage members={members} />;
+  return <MemberListPage members={[...members,...members,...members,...members,...members,...members,...members]} />;
 };
