@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/services/auth.server';
+import { MemberContextType } from '@/components/MemberContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -9,17 +9,17 @@ import {
 import { Link } from '@remix-run/react';
 
 interface Props {
-  user: AuthUser;
+  member: MemberContextType;
 }
 
-export default function AvatarMenu({ user }: Props) {
+export default function AvatarMenu({ member }: Props) {
+  console.log(member.base);
   return (
-
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Avatar>
-          <AvatarImage src={user.iconUrl} />
-          <AvatarFallback>{user.name}</AvatarFallback>
+        <Avatar className='bg-background'>
+          <AvatarImage src={member.base.iconUrl} />
+          <AvatarFallback>{member.base.lastName}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
 

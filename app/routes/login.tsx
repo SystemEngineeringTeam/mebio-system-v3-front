@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import { getAuthenticator } from '@/services/auth.server';
 import { redirect } from '@remix-run/cloudflare';
 import { Form } from '@remix-run/react';
+import { typedjson } from 'remix-typedjson';
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const authenticator = getAuthenticator(context.cloudflare.env);
@@ -9,7 +10,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   if (user !== null) {
     return redirect('/');
   }
-  return null;
+  return typedjson(null);
 };
 
 export default function LoginPage() {

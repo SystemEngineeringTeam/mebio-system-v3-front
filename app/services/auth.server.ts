@@ -2,7 +2,7 @@ import { Authenticator } from 'remix-auth';
 import { Auth0Strategy } from 'remix-auth-auth0';
 import { getSessionStorage } from './session.server';
 
-export interface AuthUser {
+interface AuthUser {
   id: string;
   name: string;
   email: string;

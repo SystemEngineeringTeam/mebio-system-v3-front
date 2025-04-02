@@ -155,21 +155,25 @@ CREATE UNIQUE INDEX "Snapshot_id_key" ON "Snapshot"("id");
 INSERT INTO "Member" ("id", "subject", "email", "securityRole", "updatedAt") VALUES
 ('0188c0f2-8e47-11ec-b909-0242ac120002', 'Mathematics', 'math@example.com', 'OWNER', CURRENT_TIMESTAMP),
 ('0188c0f2-8e47-11ec-b909-0242ac120003', 'Science', 'science@example.com', 'USER', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'USER', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'History', 'history@example.com', 'USER', CURRENT_TIMESTAMP),
+('00000000-0000-0000-0000-000000000000', 'google-oauth2|110926097349559600548', 'satooru65536@gmail.com', 'OWNER', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberBase
 INSERT INTO "MemberBase" ("memberId", "iconUrl", "firstName", "lastName", "firstNameKana", "lastNameKana", "updatedAt") VALUES
 ('0188c0f2-8e47-11ec-b909-0242ac120002', 'http://example.com/icon1.png', 'Taro', 'Yamada', 'タロウ', 'ヤマダ', CURRENT_TIMESTAMP),
 ('0188c0f2-8e47-11ec-b909-0242ac120003', 'http://example.com/icon2.png', 'Hanako', 'Tanaka', 'ハナコ', 'タナカ', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120004', 'http://example.com/icon3.png', 'Kenji', 'Suzuki', 'ケンジ', 'スズキ', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120004', 'http://example.com/icon3.png', 'Kenji', 'Suzuki', 'ケンジ', 'スズキ', CURRENT_TIMESTAMP),
+('00000000-0000-0000-0000-000000000000', 'https://satooru.me/icon.webp', '隆人', '多田', 'リュウト', 'タダ', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberActive
 INSERT INTO "MemberActive" ("memberId", "grade", "updatedAt") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'B1', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'B1', CURRENT_TIMESTAMP),
+('00000000-0000-0000-0000-000000000000', 'B3', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberActiveInternal
 INSERT INTO "MemberActiveInternal" ("memberId", "studentId", "role", "updatedAt") VALUES
-('0188c0f2-8e47-11ec-b909-0242ac120002', 'k23000', 'CHAIRPERSON', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120002', 'k23000', 'CHAIRPERSON', CURRENT_TIMESTAMP),
+('00000000-0000-0000-0000-000000000000', 'k23075', '会計', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberActiveExternal
 INSERT INTO "MemberActiveExternal" ("memberId", "schoolName", "schoolMajor", "organization", "updatedAt") VALUES
@@ -180,10 +184,12 @@ INSERT INTO "MemberActiveExternal" ("memberId", "schoolName", "schoolMajor", "or
 INSERT INTO "MemberSensitive" ("memberId", "birthday", "gender", "phoneNumber", "currentZipCode", "currentAddress", "parentsZipCode", "parentsAddress", "updatedAt") VALUES
 ('0188c0f2-8e47-11ec-b909-0242ac120002', '2001-01-01', 'male', '000-0000-0000', '111-1111', '鳥県ペンギン市アデリーペンギン町東区', '111-1112', '鳥県ペンギン市エンペラーペンギン町', CURRENT_TIMESTAMP),
 ('0188c0f2-8e47-11ec-b909-0242ac120003', '2002-02-02', 'female', '111-1111-1111', '222-2222', '鯨県マイルカ市シャチ町文字幅調整区', '222-2223', '鯨県マイルカ市カマイルカ町文字幅区', CURRENT_TIMESTAMP),
-('0188c0f2-8e47-11ec-b909-0242ac120004', '2003-03-03', 'other', '222-2222-2222', '333-3333', '硬骨魚県肉鰭市シーラカンス町11丁目', '333-3334', '硬骨魚県肉鰭市他の魚知らない街西区', CURRENT_TIMESTAMP);
+('0188c0f2-8e47-11ec-b909-0242ac120004', '2003-03-03', 'other', '222-2222-2222', '333-3333', '硬骨魚県肉鰭市シーラカンス町11丁目', '333-3334', '硬骨魚県肉鰭市他の魚知らない街西区', CURRENT_TIMESTAMP),
+('00000000-0000-0000-0000-000000000000', '2005-01-05', 'male', '000-0000-0000', '000-0000', '愛知県名古屋市', '111-1111', '愛知県名古屋市', CURRENT_TIMESTAMP);
 
 -- Seed Data for MemberStatus
 INSERT INTO "MemberStatus" ("memberId", "hasDeleted", "lastRenewalDate", "updatedHasDeletedAt", "updatedHasDeletedById", "updatedLastRenewalDateById") VALUES
 ('0188c0f2-8e47-11ec-b909-0242ac120002', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002'),
 ('0188c0f2-8e47-11ec-b909-0242ac120003', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002'),
-('0188c0f2-8e47-11ec-b909-0242ac120004', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002');
+('0188c0f2-8e47-11ec-b909-0242ac120004', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '0188c0f2-8e47-11ec-b909-0242ac120002', '0188c0f2-8e47-11ec-b909-0242ac120002'),
+('00000000-0000-0000-0000-000000000000', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000');

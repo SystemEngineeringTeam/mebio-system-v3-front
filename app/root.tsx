@@ -1,10 +1,16 @@
-import type { AuthUser } from '@/services/auth.server';
+import type { MemberContextType } from '@/components/MemberContext';
+import type { $Member } from '@/models/member';
+import type { $MemberBase } from '@/models/member/base';
+import type { $MemberStatus } from '@/models/member/status';
+import type { ModelSchemaOf } from '@/types/model';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
-import AuthUserContext from '@/components/AuthContext';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
+import MemberContext from '@/components/MemberContext';
+import { MemberId, Subject } from '@/models/member';
 import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
 import { getAuthenticator } from '@/services/auth.server';
+import { Database } from '@/services/database.server';
 import {
   Links,
   Meta,
@@ -13,8 +19,8 @@ import {
   Scripts,
   ScrollRestoration,
   useRouteError,
-  useRouteLoaderData,
 } from '@remix-run/react';
+import { typedjson, useTypedRouteLoaderData } from 'remix-typedjson';
 import './global.css';
 
 export function links() {
@@ -32,39 +38,40 @@ export function links() {
   ];
 }
 
-type LoaderData = AuthUser | null;
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const { Member } = context.db.models;
 
-export async function loader({ request, context }: LoaderFunctionArgs): Promise<LoaderData | Response> {
   const authenticator = getAuthenticator(context.cloudflare.env);
   const user = await authenticator.isAuthenticated(request);
-
   const url = new URL(request.url);
 
   if (user === null && url.pathname !== '/login') {
     return redirect('/login');
   } else if (user === null) {
-    return null;
+    throw new Response('認証に失敗しました', { status: 401 });
   }
 
-  // TODO: 自身のユーザー情報を取得し，返す
-  // const memberId = MemberId.from(user.id).match(
-  //   (id) => id,
-  //   () => {
-  //     throw new Response('不正な部員 ID です', { status: 400 });
-  //   },
-  // );
-  // const status = await __MemberStatus({} as PrismaClient).from(memberId).match(
-  //   (s) => s,
-  //   () => {
-  //     throw new Response('部員ステータスが取得できませんでした', { status: 500 });
-  //   },
-  // );
+  const member = await Member.fromSubjectWithResolved(Subject.from(user.id)).andThen((m) => m.buildBySelf());
+  if (member.isErr()) {
+    return redirect('/login');
+  }
 
-  return { ...user };
+  const base = member.value.dataResolved.member.Base().match(
+    (m) => m,
+    Database.unwrapToResponse,
+  );
+
+  const status = member.value.dataResolved.member.Status().match((s) => s, Database.unwrapToResponse);
+
+  return typedjson({
+    auth: member.value.data,
+    base: base.data,
+    status: status.data,
+  });
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const user = useRouteLoaderData<LoaderData>('root');
+  const member = useTypedRouteLoaderData<MemberContextType>('root');
 
   return (
     <html lang="ja">
@@ -75,13 +82,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AuthUserContext value={user ?? null}>
+        <MemberContext value={member}>
           <Header />
           <main>{children}</main>
           <Footer />
           <ScrollRestoration />
           <Scripts />
-        </AuthUserContext>
+        </MemberContext>
       </body>
     </html>
   );

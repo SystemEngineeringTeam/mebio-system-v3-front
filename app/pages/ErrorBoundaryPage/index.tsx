@@ -9,11 +9,11 @@ interface Props {
 
 export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
   if (isRouteErrorResponse(error)) {
-    if (error.status === 404) {
+    if (error.status === 400) {
       return (
-        <ErrorPageBase message={`${notFoundItem}が見つかりませんでした.`} title="404 Not Found">
+        <ErrorPageBase message="リクエストが不正です．" title="400 Bad Request">
           <Button asChild className="mt-5">
-            <Link to="/">ホームへ</Link>
+            <Link to="/login">ログイン</Link>
           </Button>
         </ErrorPageBase>
       );
@@ -22,6 +22,14 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
         <ErrorPageBase message="認証に失敗しました．" title="401 Unauthorized">
           <Button asChild className="mt-5">
             <Link to="/login">ログイン</Link>
+          </Button>
+        </ErrorPageBase>
+      );
+    } else if (error.status === 404) {
+      return (
+        <ErrorPageBase message={`${notFoundItem}が見つかりませんでした.`} title="404 Not Found">
+          <Button asChild className="mt-5">
+            <Link to="/">ホームへ</Link>
           </Button>
         </ErrorPageBase>
       );

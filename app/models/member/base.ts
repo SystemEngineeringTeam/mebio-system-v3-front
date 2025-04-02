@@ -36,7 +36,6 @@ type Schema = Override<
   SchemaRaw,
   {
     memberId: MemberId;
-    iconUrl: URL;
   }
 >;
 
@@ -82,7 +81,6 @@ const normalizer = ((client, builder) => ({
   schema: (__raw) => ({
     ...__raw,
     memberId: MemberId.from(__raw.memberId)._unsafeUnwrap(),
-    iconUrl: new URL(__raw.iconUrl),
   }),
   schemaResolved: (__rawResolved) => {
     const { models } = new Database(client);

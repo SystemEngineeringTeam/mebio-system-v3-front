@@ -43,7 +43,7 @@ model Member {
 
 model MemberBase {
   memberId      String @id @unique // -> `Brand<"memberId", string>`
-  iconUrl       String // -> `URL`
+  iconUrl       String
   firstName     String
   lastName      String
   firstNameKana String
@@ -114,7 +114,7 @@ model MemberActive {
 model MemberActiveInternal {
   memberId  String @id @unique // -> `Brand<"memberId", string>`
   studentId String @unique // -> `Brand<"studentId", string>`
-  role      String // -> `Role`
+  role      String? // -> `Role`
 
   /// meta ///
 
@@ -146,7 +146,7 @@ model MemberAlumni {
   memberId      String @id @unique // -> `Brand<"memberId", string>`
   graduatedYear Int
   // NOTE: Should NOT be narrow type in client.
-  oldRole       String
+  oldRole       String?
 
   /// meta ///
 
