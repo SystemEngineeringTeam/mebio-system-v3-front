@@ -30,6 +30,7 @@
     "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "noPropertyAccessFromIndexSignature": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "baseUrl": ".",
