@@ -15,10 +15,10 @@ export default function Header() {
         {data
           ? <AvatarMenu data={data} />
           : (
-            <Form action="/auth/login" method="post">
-              <Button className="text-primary" size="sm" variant="outline" type="submit">ログイン</Button>
-            </Form>
-          )}
+              <Form action="/auth/login" method="post">
+                <Button className="text-primary" size="sm" type="submit" variant="outline">ログイン</Button>
+              </Form>
+            )}
       </div>
     </header>
   );

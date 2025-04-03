@@ -15,8 +15,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export default function LoginPage() {
   return (
-    <div data-scrollable="false" className="flex flex-col items-center justify-center h-screen">
-      <Form action="/auth/login" method="post" className='flex flex-col'>
+    <div className="flex h-screen flex-col items-center justify-center" data-scrollable="false">
+      <Form action="/auth/login" className="flex flex-col" method="post">
         <Button type="submit">ログイン</Button>
       </Form>
     </div>

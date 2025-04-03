@@ -1,5 +1,5 @@
-import type { Member } from "@/services/member.server";
-import QRCode from "@/components/QRCode";
+import type { Member } from '@/services/member.server';
+import QRCode from '@/components/QRCode';
 
 interface Props {
   member: Member;
@@ -9,7 +9,7 @@ interface Props {
 export default function MemberPage({ member, memberPage }: Props) {
   return (
     <div className="p-20">
-      <div className="max-w-[600px] mx-auto flex flex-col gap-4 items-center">
+      <div className="mx-auto flex max-w-[600px] flex-col items-center gap-4">
         <QRCode value={memberPage} />
         <p>{member.id}</p>
       </div>

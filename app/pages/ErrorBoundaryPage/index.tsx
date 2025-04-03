@@ -28,7 +28,7 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
     } else if (error.status === 401) {
       return (
         <ErrorPageBase message="認証に失敗しました．" title="401 Unauthorized">
-          <Form action="/auth/login" method="post" className='flex flex-col'>
+          <Form action="/auth/login" className="flex flex-col" method="post">
             <Button type="submit">ログイン</Button>
           </Form>
         </ErrorPageBase>
@@ -57,7 +57,7 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
           <Button asChild className="mt-5">
             <Link to="/">ホームへ</Link>
           </Button>
-          <pre className='w-full overflow-scroll'>{error.stack}</pre>
+          <pre className="w-full overflow-scroll">{error.stack}</pre>
         </ErrorPageBase>
       </div>
     );

@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
-import favicon from '@/assets/set.webp'
+import favicon from '@/assets/set.webp';
 import AuthUserContext from '@/components/AuthContext';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
@@ -25,9 +25,9 @@ export function meta() {
 export function links() {
   return [
     {
-      rel: "icon",
+      rel: 'icon',
       href: favicon,
-      type: "image/webp",
+      type: 'image/webp',
     },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     {
