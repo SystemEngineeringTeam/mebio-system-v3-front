@@ -25,6 +25,6 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 
   return new Response(
     String(isValid),
-    { headers: { 'Content-Type': 'text/plain' } },
+    { headers: { 'Content-Type': 'text/csv' } },
   );
 }
