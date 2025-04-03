@@ -11,14 +11,11 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
   const member = await memberService.selectFromSubject(user.id);
 
-  const url = new URL(request.url);
-  url.pathname = member.id;
-
-  return typedjson({ member, memberPage: url.toString() });
+  return typedjson({ member });
 }
 
 export default function Index() {
-  const { member, memberPage } = useTypedLoaderData<typeof loader>();
+  const { member } = useTypedLoaderData<typeof loader>();
 
-  return <MemberPage member={member} memberPage={memberPage} />;
+  return <MemberPage member={member} />;
 };

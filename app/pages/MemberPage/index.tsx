@@ -5,13 +5,12 @@ import { Link } from '@remix-run/react';
 
 interface Props {
   member: Member;
-  memberPage: string;
 }
 
-export default function MemberPage({ member, memberPage }: Props) {
+export default function MemberPage({ member }: Props) {
   return (
     <main className="flex flex-col items-center justify-center gap-5" data-scrollable="false">
-      <QRCode value={memberPage} />
+      <QRCode value={member.id} />
       <p>{member.id}</p>
 
       <Button asChild>

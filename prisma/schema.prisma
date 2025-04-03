@@ -10,12 +10,14 @@ datasource db {
 }
 
 model Member {
-  id           String @id @unique @default(uuid(7))
-  subject      String @unique
-  admin       Boolean @default(false)
+  id         String    @id @unique @default(uuid(7))
+  subject    String    @unique
+  admin      Boolean   @default(false)
 
   /// meta ///
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  receivedAt DateTime?
+  receivedBy String?
 }
