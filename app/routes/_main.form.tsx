@@ -9,7 +9,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   if (!user) throw new Response('認証に失敗しました', { status: 401 });
 
   const member = await memberService.selectFromSubject(user.id);
-  const formUrl = formService.getFormUrl(member.id);
+  const formUrl = await formService.getFormUrl(member.id);
 
   throw redirect(formUrl);
 }
