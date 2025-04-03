@@ -28,6 +28,12 @@ export default function AvatarMenu({ data }: Props) {
           <Link to="/">プロフィール</Link>
         </DropdownMenuItem>
 
+        {data.member.admin && (
+          <DropdownMenuItem>
+            <Link to="/admin">管理者</Link>
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuItem>
           <Link to="/logout">ログアウト</Link>
         </DropdownMenuItem>
