@@ -1,6 +1,5 @@
 import type { MemberId } from '@/services/member.server';
 import type { PrismaClient } from '@prisma/client';
-import { sha256 } from 'cf-workers-hash';
 
 export class FormService {
   private client: PrismaClient;
@@ -19,7 +18,16 @@ export class FormService {
   }
 
   private async getToken(memberId: MemberId) {
-    return await sha256(`${memberId}:${this.tokenKey}`);
+    const encoder = new TextEncoder();
+    const token = await crypto.subtle.digest(
+      { name: 'SHA-256' },
+      encoder.encode(`${memberId}:${this.tokenKey}`),
+    );
+
+    const uint8Array = new Uint8Array(token);
+    return Array.from(uint8Array)
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   public async getFormUrl(memberId: MemberId): Promise<string> {
