@@ -26,7 +26,7 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
   );
 
   return new Response(
-    JSON.stringify({ valid: isValid }),
+    String(isValid),
     { headers: { 'Content-Type': 'application/json', }, },
   )
 }
