@@ -27,6 +27,6 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
 
   return new Response(
     String(isValid),
-    { headers: { 'Content-Type': 'application/json', }, },
-  )
+    { headers: { 'Content-Type': 'application/json' } },
+  );
 }
