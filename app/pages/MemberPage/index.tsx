@@ -9,13 +9,13 @@ interface Props {
 
 export default function MemberPage({ member }: Props) {
   return (
-    <main className="flex flex-col items-center justify-center gap-5" data-scrollable="false">
+    <div className="flex flex-col items-center justify-center gap-5" data-scrollable="false">
       <QRCode value={member.id} />
       <p>{member.id}</p>
 
       <Button asChild>
         <Link target="_blank" to="/form">部員情報を登録</Link>
       </Button>
-    </main>
+    </div>
   );
 }

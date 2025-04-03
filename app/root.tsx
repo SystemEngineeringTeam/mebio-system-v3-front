@@ -75,7 +75,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <AuthUserContext value={data}>
           <Header />
-          {children}
+          <main>
+            {children}
+          </main>
           <Footer />
           <ScrollRestoration />
           <Scripts />

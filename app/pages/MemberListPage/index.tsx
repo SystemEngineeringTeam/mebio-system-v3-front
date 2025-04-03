@@ -1,7 +1,7 @@
 export default function MemberListPage() {
   return (
-    <main>
+    <div>
       <h1>メンバーリスト</h1>
-    </main>
+    </div>
   );
 }
