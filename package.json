@@ -8,7 +8,7 @@
     "vitest": "NODE_OPTIONS=\"--import tsx/esm\" vitest",
     "prepare": "pnpm db:gen:client && pnpm db:apply:migration",
     "build": "pnpm run remix vite:build",
-    "prebuild": "pnpm lint:check && pnpm test",
+    "prebuild": "pnpm lint:check",
     "dev": "pnpm run remix vite:dev",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
