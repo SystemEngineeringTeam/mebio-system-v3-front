@@ -51,12 +51,14 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
       );
     }
   } else if (error instanceof Error) {
+    console.error(error);
     return (
       <div>
         <ErrorPageBase message="エラーが発生しました．" title="システムエラー">
           <Button asChild className="mt-5">
             <Link to="/">ホームへ</Link>
           </Button>
+          <p>{error.message}</p>
           <pre className="w-full overflow-scroll">{error.stack}</pre>
         </ErrorPageBase>
       </div>
