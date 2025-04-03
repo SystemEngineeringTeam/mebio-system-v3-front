@@ -18,12 +18,14 @@ export class FormService {
   }
 
   private async getToken(memberId: MemberId) {
-    return await crypto.subtle.digest(
+    const token = await crypto.subtle.digest(
       {
         name: 'SHA-256',
       },
       new TextEncoder().encode(memberId),
     );
+
+    return new Uint8Array(token).toString();
   }
 
   public async getFormUrl(memberId: MemberId): Promise<string> {
@@ -32,8 +34,13 @@ export class FormService {
     const url = new URL(this.formUrl);
     url.searchParams.set('usp', 'pp_url');
     url.searchParams.set(this.queryMap.uuid, memberId);
-    url.searchParams.set(this.queryMap.token, new Uint8Array(token).toString());
+    url.searchParams.set(this.queryMap.token, token);
 
     return url.toString();
+  }
+
+  public async verifyToken(memberId: MemberId, token: string): Promise<boolean> {
+    const expectedToken = await this.getToken(memberId);
+    return expectedToken === token;
   }
 }

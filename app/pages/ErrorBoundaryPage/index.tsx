@@ -8,6 +8,8 @@ interface Props {
 }
 
 export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
+  console.error(error);
+
   if (isRouteErrorResponse(error)) {
     if (error.status === 404) {
       return (
@@ -51,7 +53,6 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
       );
     }
   } else if (error instanceof Error) {
-    console.error(error);
     return (
       <div>
         <ErrorPageBase message="エラーが発生しました．" title="システムエラー">
