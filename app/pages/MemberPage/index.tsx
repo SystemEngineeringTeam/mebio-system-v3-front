@@ -9,7 +9,7 @@ interface Props {
 
 export default function MemberPage({ member }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center gap-5" data-scrollable="false">
+    <div className="flex flex-col items-center justify-center gap-5 h-full" data-scrollable="false">
       <QRCode value={member.id} />
       <p>{member.id}</p>
 

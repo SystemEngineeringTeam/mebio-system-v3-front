@@ -20,7 +20,7 @@ export default function AdminPage({ message }: Props) {
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-5" data-scrollable="false">
+    <div className="flex flex-col items-center gap-5 h-full" data-scrollable="false">
       <div className="p-20">
         <QRReader onScan={handleScan} />
       </div>
