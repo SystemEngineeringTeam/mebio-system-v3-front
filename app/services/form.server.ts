@@ -1,6 +1,5 @@
 import type { MemberId } from '@/services/member.server';
 import type { PrismaClient } from '@prisma/client';
-import { createHash } from 'node:crypto';
 
 export class FormService {
   private client: PrismaClient;
@@ -18,17 +17,22 @@ export class FormService {
     this.tokenKey = env.FORM_TOKEN_KEY;
   }
 
-  private getToken(memberId: MemberId) {
-    return createHash('sha256').update(`${memberId}:${this.tokenKey}`).digest('hex');
+  private async getToken(memberId: MemberId) {
+    return await crypto.subtle.digest(
+      {
+        name: 'SHA-256',
+      },
+      new TextEncoder().encode(memberId),
+    );
   }
 
-  public getFormUrl(memberId: MemberId): string {
-    const token = this.getToken(memberId);
+  public async getFormUrl(memberId: MemberId): Promise<string> {
+    const token = await this.getToken(memberId);
 
     const url = new URL(this.formUrl);
     url.searchParams.set('usp', 'pp_url');
     url.searchParams.set(this.queryMap.uuid, memberId);
-    url.searchParams.set(this.queryMap.token, token);
+    url.searchParams.set(this.queryMap.token, new Uint8Array(token).toString());
 
     return url.toString();
   }
