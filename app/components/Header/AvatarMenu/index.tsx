@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/services/auth.server';
+import type { AuthUserContext } from '@/components/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -9,27 +9,23 @@ import {
 import { Link } from '@remix-run/react';
 
 interface Props {
-  user: AuthUser;
+  data: AuthUserContext;
 }
 
-export default function AvatarMenu({ user }: Props) {
+export default function AvatarMenu({ data }: Props) {
   return (
 
     <DropdownMenu>
       <DropdownMenuTrigger>
         <Avatar>
-          <AvatarImage src={user.iconUrl} />
-          <AvatarFallback>{user.name}</AvatarFallback>
+          <AvatarImage src={data.user.iconUrl} />
+          <AvatarFallback>{data.user.name}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent>
         <DropdownMenuItem>
-          <Link to="/">トップへ</Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          <Link to="/member">プロフィール</Link>
+          <Link to="/">プロフィール</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem>

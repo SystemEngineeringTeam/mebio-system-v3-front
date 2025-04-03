@@ -7,5 +7,6 @@ interface Env {
 	AUTH0_CALLBACK_URL: string;
 	CF_PAGES_URL: string;
 	SESSION_SECRET: string;
+	FORM_URL: string;
 	DB: D1Database;
 }

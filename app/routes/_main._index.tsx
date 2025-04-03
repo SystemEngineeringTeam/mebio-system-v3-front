@@ -1,17 +1,24 @@
-import MemberListPage from '@/pages/MemberListPage';
-import { typedjson } from 'remix-typedjson';
+import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
+import MemberPage from '@/pages/MemberPage';
+import { typedjson, useTypedLoaderData } from 'remix-typedjson';
 
-export function meta() {
-  return [
-    { title: 'New Remix App' },
-    { name: 'description', content: 'Welcome to Remix!' },
-  ];
-}
+export async function loader({ context, request }: LoaderFunctionArgs) {
+  const { memberService } = context.db.services;
+  const { authenticator } = context;
+  const user = await authenticator.isAuthenticated(request);
 
-export async function loader() {
-  return typedjson({});
+  if (!user) throw new Response('認証に失敗しました', { status: 401 });
+
+  const member = await memberService.selectFromSubject(user.id);
+
+  const url = new URL(context.cloudflare.env.CF_PAGES_URL);
+  url.pathname = member.id;
+
+  return typedjson({ member, memberPage: url.toString() });
 }
 
 export default function Index() {
-  return <MemberListPage />;
+  const { member, memberPage } = useTypedLoaderData<typeof loader>();
+
+  return <MemberPage member={member} memberPage={memberPage} />;
 };

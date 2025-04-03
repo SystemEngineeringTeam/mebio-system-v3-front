@@ -1,24 +1,34 @@
-import type { AuthUser } from '@/services/auth.server';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
+import favicon from '@/assets/set.webp'
 import AuthUserContext from '@/components/AuthContext';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import ErrorBoundaryPage from '@/pages/ErrorBoundaryPage';
-import { getAuthenticator } from '@/services/auth.server';
 import {
   Links,
   Meta,
   Outlet,
-  redirect,
   Scripts,
   ScrollRestoration,
   useRouteError,
-  useRouteLoaderData,
 } from '@remix-run/react';
+import { redirect, typedjson, useTypedRouteLoaderData } from 'remix-typedjson';
 import './global.css';
+
+export function meta() {
+  return [
+    { title: '名簿システム' },
+    { name: 'description', content: '名簿システムv3-beta' },
+  ];
+}
 
 export function links() {
   return [
+    {
+      rel: "icon",
+      href: favicon,
+      type: "image/webp",
+    },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     {
       rel: 'preconnect',
@@ -32,39 +42,27 @@ export function links() {
   ];
 }
 
-type LoaderData = AuthUser | null;
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const { memberService } = context.db.services;
+  const { authenticator } = context;
 
-export async function loader({ request, context }: LoaderFunctionArgs): Promise<LoaderData | Response> {
-  const authenticator = getAuthenticator(context.cloudflare.env);
   const user = await authenticator.isAuthenticated(request);
 
   const url = new URL(request.url);
 
   if (user === null && url.pathname !== '/login') {
-    return redirect('/login');
+    throw redirect('/login');
   } else if (user === null) {
-    return null;
+    return typedjson(undefined);
   }
 
-  // TODO: 自身のユーザー情報を取得し，返す
-  // const memberId = MemberId.from(user.id).match(
-  //   (id) => id,
-  //   () => {
-  //     throw new Response('不正な部員 ID です', { status: 400 });
-  //   },
-  // );
-  // const status = await __MemberStatus({} as PrismaClient).from(memberId).match(
-  //   (s) => s,
-  //   () => {
-  //     throw new Response('部員ステータスが取得できませんでした', { status: 500 });
-  //   },
-  // );
+  const member = await memberService.selectFromSubject(user.id);
 
-  return { ...user };
+  return typedjson({ member, user });
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const user = useRouteLoaderData<LoaderData>('root');
+  const data = useTypedRouteLoaderData<typeof loader>('root');
 
   return (
     <html lang="ja">
@@ -75,7 +73,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AuthUserContext value={user ?? null}>
+        <AuthUserContext value={data}>
           <Header />
           <main>{children}</main>
           <Footer />

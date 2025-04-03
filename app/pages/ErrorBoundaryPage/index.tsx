@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { isRouteErrorResponse, Link } from '@remix-run/react';
+import { Form, isRouteErrorResponse, Link } from '@remix-run/react';
 import ErrorPageBase from './ErrorPageBase';
 
 interface Props {
@@ -17,12 +17,20 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
           </Button>
         </ErrorPageBase>
       );
+    } else if (error.status === 403) {
+      return (
+        <ErrorPageBase message="アクセスできません．" title="403 Forbidden">
+          <Button asChild className="mt-5">
+            <Link to="/">ホームへ</Link>
+          </Button>
+        </ErrorPageBase>
+      );
     } else if (error.status === 401) {
       return (
         <ErrorPageBase message="認証に失敗しました．" title="401 Unauthorized">
-          <Button asChild className="mt-5">
-            <Link to="/login">ログイン</Link>
-          </Button>
+          <Form action="/auth/login" method="post" className='flex flex-col'>
+            <Button type="submit">ログイン</Button>
+          </Form>
         </ErrorPageBase>
       );
     } else if (error.status === 500) {
@@ -49,7 +57,7 @@ export default function ErrorBoundaryPage({ error, notFoundItem }: Props) {
           <Button asChild className="mt-5">
             <Link to="/">ホームへ</Link>
           </Button>
-          <pre>{error.stack}</pre>
+          <pre className='w-full overflow-scroll'>{error.stack}</pre>
         </ErrorPageBase>
       </div>
     );
