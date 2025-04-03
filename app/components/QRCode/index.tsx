@@ -1,11 +1,11 @@
 'use client';
 
-import ReactQRCode from 'react-qr-code';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Props {
   value: string;
 };
 
 export default function QRCode({ value }: Props) {
-  return <ReactQRCode value={value} />;
+  return <QRCodeSVG value={value} />;
 }
