@@ -7,16 +7,20 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const { authenticator } = context;
   const user = await authenticator.isAuthenticated(request);
 
+  // eslint-disable-next-line no-console
   console.log('ok1', user);
   if (!user) throw new Response('認証に失敗しました', { status: 401 });
 
+  // eslint-disable-next-line no-console
   console.log('ok2');
   const member = await memberService.selectFromSubject(user.id);
 
+  // eslint-disable-next-line no-console
   console.log('ok3', member);
   const url = new URL(context.cloudflare.env.CF_PAGES_URL);
   url.pathname = member.id;
-  
+
+  // eslint-disable-next-line no-console
   console.log('ok4', url);
   return typedjson({ member, memberPage: url.toString() });
 }
