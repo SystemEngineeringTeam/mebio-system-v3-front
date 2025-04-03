@@ -7,7 +7,7 @@ export class Database {
 
   public constructor(protected client: PrismaClient, protected env: Env) {
     this.services = {
-      memberService: new MemberService(client),
+      memberService: new MemberService(client, env),
       formService: new FormService(client, env),
     };
   }

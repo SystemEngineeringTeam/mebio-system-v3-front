@@ -18,9 +18,11 @@ export interface Member {
 
 export class MemberService {
   private client;
+  private defaultAdmins: string[];
 
-  public constructor(protected __client: PrismaClient) {
+  public constructor(protected __client: PrismaClient, env: Env) {
     this.client = __client;
+    this.defaultAdmins = env.DEFAULT_ADMINS.split(',');
   }
 
   public async selectFromSubject(subject: Subject): Promise<Member> {
@@ -41,9 +43,9 @@ export class MemberService {
     return {
       id: MemberId.from(res.id)._unsafeUnwrap(),
       subject: Subject.from(res.subject),
-      admin: res.admin,
       createdAt: res.createdAt,
       updatedAt: res.updatedAt,
+      admin: res.admin === true || this.defaultAdmins.includes(res.id),
     };
   }
 }

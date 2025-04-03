@@ -8,5 +8,7 @@ interface Env {
 	CF_PAGES_URL: string;
 	SESSION_SECRET: string;
 	FORM_URL: string;
+	FORM_TOKEN_KEY: string;
+	DEFAULT_ADMINS: string;
 	DB: D1Database;
 }
