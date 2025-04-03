@@ -13,7 +13,6 @@ interface Props {
 }
 
 export default function AvatarMenu({ member }: Props) {
-  console.log(member.base);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
