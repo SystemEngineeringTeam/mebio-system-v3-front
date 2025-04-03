@@ -1,7 +1,7 @@
 export default function TopPage() {
   return (
-    <div>
+    <main>
       <h1>メンバーリスト</h1>
-    </div>
+    </main>
   );
 }

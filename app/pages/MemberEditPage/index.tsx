@@ -1,7 +1,7 @@
 export default function MemberEditPage() {
   return (
-    <div>
+    <main>
       <h1>メンバー編集画面</h1>
-    </div>
+    </main>
   );
 }
