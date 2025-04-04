@@ -28,7 +28,7 @@ export class MemberService {
   }
 
   public async selectFromSubject(subject: Subject): Promise<Member> {
-    let res = await this.client.member.findFirst({
+    let res = await this.client.member.findUnique({
       where: {
         subject,
       },
