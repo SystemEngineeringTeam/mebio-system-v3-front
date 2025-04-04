@@ -28,19 +28,17 @@ export class MemberService {
   }
 
   public async selectFromSubject(subject: Subject): Promise<Member> {
-    let res = await this.client.member.findUnique({
+    const res = await this.client.member.upsert({
       where: {
         subject,
       },
+      create: {
+        subject,
+      },
+      update: {
+        subject,
+      }
     });
-
-    if (!res) {
-      res = await this.client.member.create({
-        data: {
-          subject,
-        },
-      });
-    }
 
     return {
       id: MemberId.from(res.id)._unsafeUnwrap(),
