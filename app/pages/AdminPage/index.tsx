@@ -2,7 +2,7 @@
 
 import QRReader from "@/components/QRReader";
 import { Button } from "@/components/ui/button";
-import { Form } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -20,25 +20,20 @@ export default function AdminPage({ message }: Props) {
     setMemberId(memberIdRes.data);
   }, []);
 
-  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-    void (async () => {
-      e.preventDefault();
-      await fetch(`http://172.16.11.93:3000/qr/${memberId}`);
-    })();
-  }, [memberId]);
-
   return (
     <div className="flex flex-col items-center gap-5 h-full" data-scrollable="false">
       <div className="p-20">
         <QRReader onScan={handleScan} />
       </div>
 
-      <Form method="post" action="." className="flex flex-col items-center gap-5" onSubmit={handleSubmit}>
+      <Form method="post" action="." className="flex flex-col items-center gap-5">
         <Button type="submit" disabled={memberId === ""}>承認</Button>
         <p>{memberId}</p>
         <input type="hidden" name="memberId" value={memberId} />
 
         <Message message={message} key={`${message}:${memberId}`} />
+
+        {memberId && <Link to={`http://172.16.11.93:3000/qr/${memberId}`} target="_blank">テプラの印刷</Link>}
       </Form>
     </div>
   );
