@@ -25,13 +25,14 @@ export async function action({ context, request }: LoaderFunctionArgs) {
   if (!user) throw new Response('認証に失敗しました', { status: 401 });
 
   const formData = await request.formData();
-  const targetMemberId = MemberId.from(formData.get('memberId') as string).match(
+  const target = formData.get('memberId') as string;
+  const targetMemberId = MemberId.from(target).match(
     (m) => m,
-    () => { throw new Response('不正なリクエストです', { status: 400 }); }
+    () => { throw new Response(`不正なリクエストです: ${target}`, { status: 400 }); }
   );
 
   const message = (await memberService.approve(targetMemberId, user.id)).match(
-    () => '承認しました',
+    () => `${target}: 承認しました`,
     (e) => e,
   );
 

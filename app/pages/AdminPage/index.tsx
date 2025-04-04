@@ -3,7 +3,7 @@
 import QRReader from "@/components/QRReader";
 import { Button } from "@/components/ui/button";
 import { Form } from "@remix-run/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 
 export default function AdminPage({ message }: Props) {
   const [memberId, setMemberId] = useState<string>("");
+
   const handleScan = useCallback((data: string) => {
     const memberIdRes = z.string().uuid().safeParse(data);
     if (!memberIdRes.success) return;
@@ -30,8 +31,20 @@ export default function AdminPage({ message }: Props) {
         <p>{memberId}</p>
         <input type="hidden" name="memberId" value={memberId} />
 
-        <p>{message}</p>
+        <Message message={message} key={`${message}:${memberId}`} />
       </Form>
     </div>
   );
+}
+
+function Message({ message: _message }: Props) {
+  const [message, setMessage] = useState<string | undefined>(_message);
+
+  useEffect(() => {
+    setInterval(() => {
+      setMessage(undefined);
+    }, 3000);
+  }, [_message]);
+
+  return <p>{message}</p>;
 }
