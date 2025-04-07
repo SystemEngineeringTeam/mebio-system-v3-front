@@ -2,6 +2,8 @@
 
 import QRReader from "@/components/QRReader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Form, Link } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
@@ -20,6 +22,14 @@ export default function AdminPage({ message }: Props) {
     setMemberId(memberIdRes.data);
   }, []);
 
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const memberIdRes = z.string().uuid().safeParse(value);
+    if (!memberIdRes.success) return;
+
+    setMemberId(memberIdRes.data);
+  }, []);
+
   return (
     <div className="flex flex-col items-center gap-5 h-full" data-scrollable="false">
       <div className="p-20">
@@ -28,12 +38,9 @@ export default function AdminPage({ message }: Props) {
 
       <Form method="post" action="." className="flex flex-col items-center gap-5">
         <Button type="submit" disabled={memberId === ""}>承認</Button>
-        <p>{memberId}</p>
-        <input type="hidden" name="memberId" value={memberId} />
+        <Input type="text" name="memberId" value={memberId} onChange={handleChange} />
 
         <Message message={message} key={`${message}:${memberId}`} />
-
-        {memberId && <Link to={`http://172.16.11.93:3000/qr/${memberId}`} target="_blank">テプラの印刷</Link>}
       </Form>
     </div>
   );
