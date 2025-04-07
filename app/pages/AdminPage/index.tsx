@@ -4,7 +4,7 @@ import QRReader from "@/components/QRReader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Form, Link } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -38,7 +38,10 @@ export default function AdminPage({ message }: Props) {
 
       <Form method="post" action="." className="flex flex-col items-center gap-5">
         <Button type="submit" disabled={memberId === ""}>承認</Button>
-        <Input type="text" name="memberId" value={memberId} onChange={handleChange} />
+        <Label className="flex flex-row gap-2">
+          <span>MemberID</span>
+          <Input type="text" name="memberId" value={memberId} onChange={handleChange} />
+        </Label>
 
         <Message message={message} key={`${message}:${memberId}`} />
       </Form>
