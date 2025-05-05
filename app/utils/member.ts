@@ -2,30 +2,30 @@ import type { $MemberActive } from '@/models/member/active';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { $MemberAlumni } from '@/models/member/alumni';
-import type { BuildModelResult, ModelBuilderType, ModelSchemaRawOf } from '@/types/model';
+import type { ModelBuilderType, ModelSchemaRawOf } from '@/types/model';
 import type { PartialNullable } from '@/types/utils';
 import type { PrismaClient } from '@prisma/client';
 import { Database } from '@/services/database.server';
-import { buildRawData, schemaRaw2rawData } from '@/utils/model';
+import { schemaRaw2rawData } from '@/utils/model';
 
 export type MemberDetailActive =
   | {
     activeType: 'INTERNAL';
-    ActiveData: () => BuildModelResult<$MemberActiveInternal>;
+    ActiveData: () => $MemberActiveInternal;
   }
   | {
     activeType: 'EXTERNAL';
-    ActiveData: () => BuildModelResult<$MemberActiveExternal>;
+    ActiveData: () => $MemberActiveExternal;
   };
 
 export type MemberDetail =
   | {
     type: 'ACTIVE';
-    Data: () => BuildModelResult<$MemberActive>;
+    Data: () => $MemberActive;
   } & MemberDetailActive
   | {
     type: 'ALUMNI';
-    Data: () => BuildModelResult<$MemberAlumni>;
+    Data: () => $MemberAlumni;
   };
 
 export function toMemberDetailActive(
@@ -46,14 +46,14 @@ export function toMemberDetailActive(
   if (internal != null) {
     return {
       activeType: 'INTERNAL',
-      ActiveData: () => buildRawData(models.member.active.Internal.__build).default(schemaRaw2rawData<$MemberActiveInternal>(internal)).build(builder),
+      ActiveData: () => models.member.active.Internal(builder).__build(schemaRaw2rawData<$MemberActiveInternal>(internal)),
     } as const;
   }
 
   if (external != null) {
     return {
       activeType: 'EXTERNAL',
-      ActiveData: () => buildRawData(models.member.active.External.__build).default(schemaRaw2rawData<$MemberActiveExternal>(external)).build(builder),
+      ActiveData: () => models.member.active.External(builder).__build(schemaRaw2rawData<$MemberActiveExternal>(external)),
     } as const;
   }
 
@@ -84,14 +84,14 @@ export function toMemberDetail(
   if (MemberAlumni != null) {
     return {
       type: 'ALUMNI',
-      Data: () => buildRawData(models.member.Alumni.__build).default(schemaRaw2rawData<$MemberAlumni>(MemberAlumni)).build(builder),
+      Data: () => models.member.Alumni(builder).__build(schemaRaw2rawData<$MemberAlumni>(MemberAlumni)),
     } as const;
   }
 
   if (MemberActive != null) {
     return {
       type: 'ACTIVE',
-      Data: () => buildRawData(models.member.Active.__build).default(schemaRaw2rawData<$MemberActive>(MemberActive)).build(builder),
+      Data: () => models.member.Active(builder).__build(schemaRaw2rawData<$MemberActive>(MemberActive)),
       ...toMemberDetailActive(client, builder, { MemberActiveInternal, MemberActiveExternal }),
     } as const;
   }

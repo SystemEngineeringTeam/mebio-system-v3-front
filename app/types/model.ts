@@ -50,7 +50,7 @@ export type ModelSerializer<
   }>;
 };
 
-export interface ModelRawData4build<M extends AnyModel<ModelMode>> { __raw: ModelSchemaRawOf<M>; __rawResolved: Nullable<ModelSchemaResolvedRawOf<M>> }
+export interface ModelRawData4build<M extends AnyModel> { __raw: ModelSchemaRawOf<M>; __rawResolved: Nullable<ModelSchemaResolvedRawOf<M>> }
 
 export type ModelBuilderType =
   | { type: 'ANONYMOUS' }
@@ -60,16 +60,23 @@ export type ModelBuilderType =
 export interface ModelBuilder<
   M extends AnyModel,
 > {
+  __build: (args: ModelRawData4build<M>) => M;
   from: (...args: any[]) => DatabaseResult<ExtractModelVariants<M>['DEFAULT']>;
   fromWithResolved?: (...args: any[]) => DatabaseResult<ExtractModelVariants<M>['WITH_RESOLVED']>;
-  fetchMany?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<Array<ExtractModelVariants<M>['DEFAULT']>>;
-  fetchManyWithResolved?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<Array<ExtractModelVariants<M>['WITH_RESOLVED']>>;
+  findMany?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<Array<ExtractModelVariants<M>['DEFAULT']>>;
+  findManyWithResolved?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<Array<ExtractModelVariants<M>['WITH_RESOLVED']>>;
   [key: string]: any;
 }
 
 export type FetchModelMany<
   M extends Uncapitalize<Prisma.ModelName>,
 > = Omit<NonNullable<Parameters<PrismaClient[M]['findMany']>[0]>, 'include' | 'select'>;
+
+// FIXME: これ `interface` にしたら型エラーになる.  なぜか.
+// eslint-disable-next-line ts/consistent-type-definitions
+export type RelatedResponseClearerInclude<
+  I extends string,
+> = { include: Record<Exclude<I, '_count'>, true> };
 
 /**
  * __M = (client) => M のときの M

@@ -1,6 +1,7 @@
 import type { ModelBuilderType, ModelSchemaOf, ModelSchemaRawOf } from '@/types/model';
 import type { PrismaClient } from '@prisma/client';
-import { Database } from '@/services/database.server';
+import { databaseWrapBridgeResult } from '@/utils/errors/database';
+import { schemaRaw2rawData } from '@/utils/model';
 import { PrismockClient } from 'prismock';
 import { $Member, MemberId, Subject } from './member';
 
@@ -37,11 +38,11 @@ const memberData2 = {
 
 describe('部員モデル', () => {
   let client: PrismaClient;
-  let Member: ReturnType<typeof $Member['with']>;
+  let Member: ReturnType<ReturnType<typeof $Member['with']>>;
 
   beforeEach(async () => {
     client = new PrismockClient();
-    Member = $Member.with(client);
+    Member = $Member.with(client)({} as ModelBuilderType);
     await client.$connect();
   });
 
@@ -50,7 +51,7 @@ describe('部員モデル', () => {
   });
 
   it('生データから作成できるか', () => {
-    const rBuild = Member.__build.bySelf(rawData);
+    const rBuild = Member.__build(schemaRaw2rawData<$Member>(memberDataRaw));
     expect(() => rBuild._unsafeUnwrap().default).not.toThrow();
   });
 
@@ -66,7 +67,7 @@ describe('部員モデル', () => {
 
   describe('READ', () => {
     it('自身の MemberId から部員モデルをコンストラクトできるか', async () => {
-      (await Database.wrapResult(
+      (await databaseWrapBridgeResult(
         client.member.create({
           data: memberDataRaw,
         }),
@@ -76,7 +77,7 @@ describe('部員モデル', () => {
       expect(member.data).toEqual(memberData);
     });
     it('複数取得ができるか', async () => {
-      (await Database.wrapResult(
+      (await databaseWrapBridgeResult(
         client.member.createMany({
           data: [memberDataRaw, memberDataRaw2],
         }),
@@ -89,7 +90,7 @@ describe('部員モデル', () => {
       expect(members[1]?.data).toEqual(memberData2);
     });
     it('複数取得 (個数制限) ができるか', async () => {
-      (await Database.wrapResult(
+      (await databaseWrapBridgeResult(
         client.member.createMany({
           data: [memberDataRaw, memberDataRaw2],
         }),
@@ -112,7 +113,7 @@ describe('部員モデル', () => {
     });
 
     it('匿名アクセスのときに `PERMISSION_DENIED` になるか', async () => {
-      (await Database.wrapResult(
+      (await databaseWrapBridgeResult(
         client.member.create({
           data: memberDataRaw,
         }),
@@ -130,7 +131,7 @@ describe('部員モデル', () => {
   });
   describe('UPDATE', () => {
     it('部員の情報を更新できるか', async () => {
-      (await Database.wrapResult(
+      (await databaseWrapBridgeResult(
         client.member.create({
           data: memberDataRaw,
         }),
@@ -150,7 +151,7 @@ describe('部員モデル', () => {
   });
   describe('DELETE', () => {
     it('部員を削除できるか', async () => {
-      (await Database.wrapResult(
+      (await databaseWrapBridgeResult(
         client.member.create({
           data: memberDataRaw,
         }),

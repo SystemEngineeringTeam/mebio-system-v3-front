@@ -12,7 +12,7 @@ import { Database } from '@/services/database.server';
 import { parseUuid } from '@/utils';
 import { DatabaseError, databaseWrapBridgeResult } from '@/utils/errors/database';
 import { ModelOperationError } from '@/utils/errors/database/model-operation';
-import { fillPrismaSkip, includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
+import { includeKeys2select, matchWithDefault, matchWithResolved, schemaRaw2rawData, separateRawData } from '@/utils/model';
 import { err, ok, safeTry } from 'neverthrow';
 
 /// Metadata ///
@@ -93,10 +93,10 @@ const serializer = ((client, builder) => ({
 
       return {
         member: {
-          Payer: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsPayer)).build(builder),
-          Receiver: () => buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsReceiver)).build(builder),
+          Payer: () => models.Member(builder).__build(schemaRaw2rawData<$Member>(MemberAsPayer)),
+          Receiver: () => models.Member(builder).__build(schemaRaw2rawData<$Member>(MemberAsReceiver)),
           Approver: () => MemberAsApprover != null
-            ? buildRawData(models.Member.__build).default(schemaRaw2rawData<$Member>(MemberAsApprover)).build(builder)
+            ? models.Member(builder).__build(schemaRaw2rawData<$Member>(MemberAsApprover))
             : null,
         },
       };
@@ -104,9 +104,9 @@ const serializer = ((client, builder) => ({
     toRaw: (data) => {
       const { member } = data;
       return {
-        MemberAsPayer: member.Payer().data.__raw,
-        MemberAsReceiver: member.Receiver().data.__raw,
-        MemberAsApprover: member.Approver() != null ? member.Approver().data.__raw : null,
+        MemberAsPayer: member.Payer().__raw,
+        MemberAsReceiver: member.Receiver().__raw,
+        MemberAsApprover: member.Approver()?.__raw,
       };
     },
   },
@@ -127,7 +127,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
   private serialized: ReturnType<typeof serializer>;
 
-  private constructor(
+  public constructor(
     private client: PrismaClient,
     private rawData: RawData,
     private builder: ModelBuilderType,
@@ -154,6 +154,8 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
 
   public static with(client: PrismaClient) {
     return (builder: ModelBuilderType) => ({
+      __build: (args: RawData) => new $Payment(client, args, builder),
+
       from: (id: PaymentId) => safeTry(async function* () {
         if (builder.type === 'ANONYMOUS') {
           return err(ModelOperationError.create({ type: 'PERMISSION_DENIED', context: { builder } }));
@@ -178,7 +180,7 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
         return ok(new $Payment<'WITH_RESOLVED'>(client, rawData, builder));
       }).mapErr(dbError('fromWithResolved')),
 
-      fetchMany: (args) => safeTry(async function* () {
+      findMany: (args) => safeTry(async function* () {
         if (builder.type === 'ANONYMOUS') {
           return err(ModelOperationError.create({ type: 'PERMISSION_DENIED', context: { builder } }));
         }
@@ -199,9 +201,10 @@ export class $Payment<Mode extends ModelMode = 'DEFAULT'> implements ThisModelIm
     );
   }
 
-  public update(data: Partial<Schema>) {
+  public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
+    const __raw = this.serialized.schema.toRaw({ ...this.data, ...data });
     return databaseWrapBridgeResult(
-      this.client.payment.update({ data: fillPrismaSkip(data), where: { id: this.data.id } }),
+      this.client.payment.update({ data: __raw, where: { id: this.data.id } }),
     )
       .mapErr(dbError('update'))
       .map(separateRD.default)

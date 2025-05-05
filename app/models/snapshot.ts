@@ -84,7 +84,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
 
   private serialized: ReturnType<typeof serializer>;
 
-  private constructor(
+  public constructor(
     private client: PrismaClient,
     private rawData: RawData,
     private builder: ModelBuilderType,
@@ -103,6 +103,8 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
 
   public static with(client: PrismaClient) {
     return (builder: ModelBuilderType) => ({
+      __build: (args: RawData) => new $Snapshot(client, args, builder),
+
       from: (id: SnapshotId) => safeTry(async function* () {
         if (builder.type === 'ANONYMOUS') {
           return err(ModelOperationError.create({ type: 'PERMISSION_DENIED', context: { builder } }));
@@ -115,7 +117,7 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
         return ok(new $Snapshot(client, rawData, builder));
       }).mapErr(dbError('from')),
 
-      fetchMany: (args) => safeTry(async function* () {
+      findMany: (args) => safeTry(async function* () {
         if (builder.type === 'ANONYMOUS') {
           return err(ModelOperationError.create({ type: 'PERMISSION_DENIED', context: { builder } }));
         }
@@ -130,12 +132,10 @@ export class $Snapshot<Mode extends ModelMode = 'DEFAULT'> implements ThisModelI
   }
 
   public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
+    const __raw = this.serialized.schema.toRaw({ ...this.data, ...data });
     return databaseWrapBridgeResult(
       this.client.snapshot.update({
-        data: {
-          ...data,
-          body: JSON.stringify(data.body),
-        },
+        data: __raw,
         where: { id: this.data.id },
       }),
     )

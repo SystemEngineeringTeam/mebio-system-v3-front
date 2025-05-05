@@ -1,6 +1,5 @@
 import type { $Member } from '@/models/member';
-import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMetadataOf, ModelMode, ModelModeOf, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelSchemaResolvedOf, ModelSchemaResolvedRawOf, ModelSerializer, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
+import type { Model, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMetadataOf, ModelMode, ModelModeOf, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelSchemaResolvedOf, ModelSchemaResolvedRawOf, ModelSerializer, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   PrismaClient,
