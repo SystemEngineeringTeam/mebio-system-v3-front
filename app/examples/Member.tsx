@@ -5,8 +5,10 @@ import type { ModelSchemaOf } from '@/types/model';
 import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
 import type { ReactElement } from 'react';
 import { MemberId } from '@/models/member';
+import { $Payment, PaymentId } from '@/models/payment';
 import { Database } from '@/services/database.server';
-import { ok } from 'neverthrow';
+import { ErrorEntry } from '@/utils/errors/_base';
+import { ok, safeTry } from 'neverthrow';
 import { startTransition, useActionState } from 'react';
 
 function MemberCardInfo({
@@ -94,3 +96,14 @@ async function fakeLoader({ context }: LoaderFunctionArgs) {
 }
 
 // ...
+
+safeTry(async function* () {
+  const Payment = $Payment.with({} as PrismaClient)({} as ModelBuilderType);
+  const paymentId = PaymentId.from('0188c0f2-8e47-11ec-b909-0242ac120002')._unsafeUnwrap();
+  const payment = yield * Payment.from(paymentId);
+  const a = payment.data;
+
+  return ok({});
+}).mapErr((e) => {
+  throw ErrorEntry.toResponse(e);
+});

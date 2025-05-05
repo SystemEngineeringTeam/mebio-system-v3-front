@@ -1,5 +1,4 @@
-import type { $Member } from '@/models/member';
-import type { AnyModel, ModelBuilderInternal, ModelBuilderType, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModelSchemaResolvedRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
+import type { AnyModel, ModelMode, ModelRawData4build, ModelSchemaRawOf, ModelSchemaResolvedRawOf, ModeWithDefault, ModeWithResolved } from '@/types/model';
 import type { Nullable } from '@/types/utils';
 import { fromEntries, getEntries } from '@/utils';
 import { Prisma } from '@prisma/client';
@@ -62,25 +61,6 @@ export function separateRawData<
       // @ts-expect-error: TypeScript の負け
       return { __raw, __rawResolved };
     },
-  };
-}
-
-export function buildRawData<
-  M extends AnyModel,
->(
-  builderInternal: ModelBuilderInternal<M>,
-) {
-  return {
-    default: (rawData: ModelRawData4build<M>) => ({
-      build: (builder: ModelBuilderType) => builderInternal.__with(rawData, builder).map((m) => m.default),
-      buildBy: (memberAsBuilder: $Member) => builderInternal.by(rawData, memberAsBuilder).map((m) => m.default),
-      buildBySelf: () => builderInternal.bySelf(rawData).map((m) => m.default),
-    }),
-    withResolved: (rawData: ModelRawData4build<M>) => ({
-      build: (builder: ModelBuilderType) => builderInternal.__with(rawData, builder).map((m) => m.withResolved),
-      buildBy: (memberAsBuilder: $Member) => builderInternal.by(rawData, memberAsBuilder).map((m) => m.withResolved),
-      buildBySelf: () => builderInternal.bySelf(rawData).map((m) => m.withResolved),
-    }),
   };
 }
 

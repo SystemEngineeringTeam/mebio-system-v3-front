@@ -66,7 +66,7 @@ describe('部員モデル', () => {
 
   describe('READ', () => {
     it('自身の MemberId から部員モデルをコンストラクトできるか', async () => {
-      (await Database.transformResult(
+      (await Database.wrapResult(
         client.member.create({
           data: memberDataRaw,
         }),
@@ -76,7 +76,7 @@ describe('部員モデル', () => {
       expect(member.data).toEqual(memberData);
     });
     it('複数取得ができるか', async () => {
-      (await Database.transformResult(
+      (await Database.wrapResult(
         client.member.createMany({
           data: [memberDataRaw, memberDataRaw2],
         }),
@@ -89,7 +89,7 @@ describe('部員モデル', () => {
       expect(members[1]?.data).toEqual(memberData2);
     });
     it('複数取得 (個数制限) ができるか', async () => {
-      (await Database.transformResult(
+      (await Database.wrapResult(
         client.member.createMany({
           data: [memberDataRaw, memberDataRaw2],
         }),
@@ -112,7 +112,7 @@ describe('部員モデル', () => {
     });
 
     it('匿名アクセスのときに `PERMISSION_DENIED` になるか', async () => {
-      (await Database.transformResult(
+      (await Database.wrapResult(
         client.member.create({
           data: memberDataRaw,
         }),
@@ -130,7 +130,7 @@ describe('部員モデル', () => {
   });
   describe('UPDATE', () => {
     it('部員の情報を更新できるか', async () => {
-      (await Database.transformResult(
+      (await Database.wrapResult(
         client.member.create({
           data: memberDataRaw,
         }),
@@ -150,7 +150,7 @@ describe('部員モデル', () => {
   });
   describe('DELETE', () => {
     it('部員を削除できるか', async () => {
-      (await Database.transformResult(
+      (await Database.wrapResult(
         client.member.create({
           data: memberDataRaw,
         }),

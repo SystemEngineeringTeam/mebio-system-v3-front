@@ -1,6 +1,6 @@
 import type { $Member } from '@/models/member';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelSerializer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { Override } from '@/types/utils';
 import type {
   Prisma,
@@ -73,7 +73,7 @@ const normalizer = ((client, builder) => ({
       },
     };
   },
-})) satisfies ModelNormalizer<ThisModel>;
+})) satisfies ModelSerializer<ThisModel>;
 
 /// Model ///
 
@@ -126,7 +126,7 @@ export class $MemberActiveExternal<Mode extends ModelMode = 'DEFAULT'> implement
     return {
       __build,
       from: (memberId: MemberId) => {
-        const rawData = Database.transformResult(
+        const rawData = Database.wrapResult(
           client.memberActiveExternal.findUniqueOrThrow({
             where: { memberId },
           }),
@@ -137,7 +137,7 @@ export class $MemberActiveExternal<Mode extends ModelMode = 'DEFAULT'> implement
         return rawData.map(buildRawData(__build).default);
       },
       fromWithResolved: (memberId: MemberId) => {
-        const rawData = Database.transformResult(
+        const rawData = Database.wrapResult(
           client.memberActiveExternal.findUniqueOrThrow({
             where: { memberId },
             include: includeKeys2select(includeKeys),
@@ -149,7 +149,7 @@ export class $MemberActiveExternal<Mode extends ModelMode = 'DEFAULT'> implement
         return rawData.map(buildRawData(__build).withResolved);
       },
       fetchMany: (args) => {
-        const rawDataList = Database.transformResult(
+        const rawDataList = Database.wrapResult(
           client.memberActiveExternal.findMany(args),
         )
           .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
@@ -162,7 +162,7 @@ export class $MemberActiveExternal<Mode extends ModelMode = 'DEFAULT'> implement
         }));
       },
       fetchManyWithResolved: (args) => {
-        const rawDataList = Database.transformResult(
+        const rawDataList = Database.wrapResult(
           client.memberActiveExternal.findMany({
             ...args,
             include: includeKeys2select(includeKeys),
@@ -188,7 +188,7 @@ export class $MemberActiveExternal<Mode extends ModelMode = 'DEFAULT'> implement
   }
 
   public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
-    return Database.transformResult(
+    return Database.wrapResult(
       this.client.memberActiveExternal.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
     )
       .mapErr(this.dbError.transformPrismaBridge('update'))
@@ -197,7 +197,7 @@ export class $MemberActiveExternal<Mode extends ModelMode = 'DEFAULT'> implement
   }
 
   public delete(): DatabaseResult<void> {
-    return Database.transformResult(
+    return Database.wrapResult(
       this.client.memberActiveExternal.delete({ where: { memberId: this.data.memberId } }),
     )
       .mapErr(this.dbError.transformPrismaBridge('delete'))

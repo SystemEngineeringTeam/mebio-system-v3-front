@@ -1,8 +1,7 @@
 import type { $Member } from '@/models/member';
-import type { DatabaseErrorWith, DatabaseResult } from '@/types/database';
 import type { Nullable } from '@/types/utils';
+import type { DatabaseResult } from '@/utils/errors/database';
 import type { Prisma, PrismaClient } from '@prisma/client';
-import type { Result } from 'neverthrow';
 
 export interface ModelMetadata<
   M extends Uncapitalize<Prisma.ModelName>,
@@ -21,10 +20,8 @@ export type ModeWithResolved<Mode extends ModelMode, T> = Mode extends 'WITH_RES
 export type ModelResolver<
   Mode extends ModelMode,
   M extends AnyModel,
-> = ModeWithDefault<
-  Mode,
-  ReturnType<NonNullable<ModelBuilder<M>['fromWithResolved']>>
->;
+  MD = ExtractModelVariants<M>['WITH_RESOLVED'],
+> = ModeWithDefault<Mode, DatabaseResult<MD>>;
 
 export interface Model<
   Mode extends ModelMode,
@@ -40,11 +37,17 @@ export interface Model<
   delete?: (...args: any[]) => DatabaseResult<void>;
 }
 
-export type ModelNormalizer<
+export type ModelSerializer<
   M extends AnyModel,
 > = (client: PrismaClient, builder: ModelBuilderType) => {
-  schema: (__raw: ModelSchemaRawOf<M>) => ModelSchemaOf<M>;
-  schemaResolved: (__rawResolved: ModelSchemaResolvedRawOf<M>) => ModelSchemaResolvedOf<M>;
+  schema: {
+    fromRaw: (__raw: ModelSchemaRawOf<M>) => ModelSchemaOf<M>;
+    toRaw: (data: ModelSchemaOf<M>) => ModelSchemaRawOf<M>;
+  };
+  schemaResolved: Nullable<{
+    fromRaw: (__rawResolved: ModelSchemaResolvedRawOf<M>) => ModelSchemaResolvedOf<M>;
+    toRaw: (data: ModelSchemaResolvedOf<M>) => ModelSchemaResolvedRawOf<M>;
+  }>;
 };
 
 export interface ModelRawData4build<M extends AnyModel<ModelMode>> { __raw: ModelSchemaRawOf<M>; __rawResolved: Nullable<ModelSchemaResolvedRawOf<M>> }
@@ -53,59 +56,14 @@ export type ModelBuilderType =
   | { type: 'ANONYMOUS' }
   | { type: 'SELF' }
   | { type: 'MEMBER'; member: $Member };
-export type BuildModelResult<S> = Result<S, DatabaseErrorWith<'MODEL_BUILD_ERROR'>>;
-
-export type ModelUnwrappedInstances__DO_NOT_EXPOSE<
-  M extends AnyModel,
-  V extends ModelVariants = ExtractModelVariants<M>,
-> = (
-  rawData: ModelRawData4build<V['DEFAULT']>,
-  builder: ModelBuilderType,
-) => { default: V['DEFAULT']; withResolved: V['WITH_RESOLVED'] };
-
-export type ModelInstances<
-  M extends AnyModel,
-> = (
-  ...args: Parameters<ModelUnwrappedInstances__DO_NOT_EXPOSE<M>>
-) => BuildModelResult<ReturnType<ModelUnwrappedInstances__DO_NOT_EXPOSE<M>>>;
-
-export interface ModelBuilderInternal<
-  M extends AnyModel,
-> {
-  __with: ModelInstances<M>;
-  by: (rawData: ModelRawData4build<M>, memberAsBuilder: $Member) => ReturnType<ModelInstances<M>>;
-  bySelf: (rawData: ModelRawData4build<M>) => ReturnType<ModelInstances<M>>;
-  [key: string]: any;
-}
-
-interface ModelBuilderInternalReturns<
-  M extends AnyModel,
-  Mode extends ModelMode,
-  VV = ExtractModelVariants<M>[Mode],
-> {
-  build: (builder: ModelBuilderType) => BuildModelResult<VV>;
-  buildBy: (memberAsBuilder: $Member) => BuildModelResult<VV>;
-  buildBySelf: () => BuildModelResult<VV>;
-}
-
-interface ModelBuilderInternalArrayReturns<
-  M extends AnyModel,
-  Mode extends ModelMode,
-  VV = ExtractModelVariants<M>[Mode],
-> {
-  build: (builder: ModelBuilderType) => Array<BuildModelResult<VV>>;
-  buildBy: (memberAsBuilder: $Member) => Array<BuildModelResult<VV>>;
-  buildBySelf: () => Array<BuildModelResult<VV>>;
-}
 
 export interface ModelBuilder<
   M extends AnyModel,
 > {
-  __build: ModelBuilderInternal<M>;
-  from: (...args: any[]) => DatabaseResult<ModelBuilderInternalReturns<M, 'DEFAULT'>>;
-  fromWithResolved?: (...args: any[]) => DatabaseResult<ModelBuilderInternalReturns<M, 'WITH_RESOLVED'>>;
-  fetchMany?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<ModelBuilderInternalArrayReturns<M, 'DEFAULT'>>;
-  fetchManyWithResolved?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<ModelBuilderInternalArrayReturns<M, 'WITH_RESOLVED'>>;
+  from: (...args: any[]) => DatabaseResult<ExtractModelVariants<M>['DEFAULT']>;
+  fromWithResolved?: (...args: any[]) => DatabaseResult<ExtractModelVariants<M>['WITH_RESOLVED']>;
+  fetchMany?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<Array<ExtractModelVariants<M>['DEFAULT']>>;
+  fetchManyWithResolved?: (args: FetchModelMany<ModelMetadataOf<M>['modelName']>) => DatabaseResult<Array<ExtractModelVariants<M>['WITH_RESOLVED']>>;
   [key: string]: any;
 }
 

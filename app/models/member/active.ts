@@ -2,7 +2,7 @@ import type { $Member } from '@/models/member';
 import type { $MemberActiveExternal } from '@/models/member/active/external';
 import type { $MemberActiveInternal } from '@/models/member/active/internal';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelSerializer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { ArrayElem, Nullable, Override } from '@/types/utils';
 import type {
   Prisma,
@@ -87,7 +87,7 @@ const normalizer = ((client, builder) => ({
       ...toMemberDetailActive(client, builder, { MemberActiveExternal, MemberActiveInternal }),
     };
   },
-})) satisfies ModelNormalizer<ThisModel>;
+})) satisfies ModelSerializer<ThisModel>;
 
 /// Model ///
 
@@ -140,7 +140,7 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
     return {
       __build,
       from: (memberId: MemberId) => {
-        const rawData = Database.transformResult(
+        const rawData = Database.wrapResult(
           client.memberActive.findUniqueOrThrow({
             where: { memberId },
           }),
@@ -152,12 +152,12 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
       },
       fromWithResolved: (memberId: MemberId) => {
         const rFetchedData = ResultAsync.combine([
-          Database.transformResult(
+          Database.wrapResult(
             client.memberActive.findUniqueOrThrow({
               where: { memberId },
             }),
           ),
-          Database.transformResult(
+          Database.wrapResult(
             client.member.findUniqueOrThrow({
               where: { id: memberId },
               include: includeKeys2select(includeKeysRelated),
@@ -178,7 +178,7 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
         );
       },
       fetchMany: (args) => {
-        const rawDataList = Database.transformResult(
+        const rawDataList = Database.wrapResult(
           client.memberActive.findMany(args),
         )
           .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
@@ -192,13 +192,13 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
       },
       fetchManyWithResolved: (args) => {
         const rFetchedData = ResultAsync.combine([
-          Database.transformResult(
+          Database.wrapResult(
             client.memberActive.findMany({
               ...args,
               orderBy: { memberId: 'asc' },
             }),
           ),
-          Database.transformResult(
+          Database.wrapResult(
             client.member.findMany({
               orderBy: { id: 'asc' },
               include: includeKeys2select(includeKeysRelated),
@@ -239,7 +239,7 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
   }
 
   public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
-    return Database.transformResult(
+    return Database.wrapResult(
       this.client.memberActive.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
     )
       .mapErr(this.dbError.transformPrismaBridge('update'))
@@ -248,7 +248,7 @@ export class $MemberActive<Mode extends ModelMode = 'DEFAULT'> implements ThisMo
   }
 
   public delete(): DatabaseResult<void> {
-    return Database.transformResult(
+    return Database.wrapResult(
       this.client.memberActive.delete({ where: { memberId: this.data.memberId } }),
     )
       .mapErr(this.dbError.transformPrismaBridge('delete'))

@@ -6,7 +6,7 @@ import type { $MemberAlumni } from '@/models/member/alumni';
 import type { $MemberSensitive } from '@/models/member/sensitive';
 import type { $MemberStatus } from '@/models/member/status';
 import type { DatabaseResult } from '@/types/database';
-import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelNormalizer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
+import type { BuildModelResult, Model, ModelBuilder, ModelBuilderInternal, ModelBuilderType, ModelGenerator, ModelInstances, ModelMetadata, ModelMode, ModelSerializer, ModelRawData4build, ModelResolver, ModelSchemaRawOf, ModelUnwrappedInstances__DO_NOT_EXPOSE, ModeWithResolved } from '@/types/model';
 import type { Nullable, Override } from '@/types/utils';
 import type {
   Prisma,
@@ -99,7 +99,7 @@ const normalizer = ((client, builder) => ({
       },
     };
   },
-})) satisfies ModelNormalizer<ThisModel>;
+})) satisfies ModelSerializer<ThisModel>;
 
 /// Model ///
 
@@ -152,7 +152,7 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
     return {
       __build,
       from: (memberId: MemberId) => {
-        const rawData = Database.transformResult(
+        const rawData = Database.wrapResult(
           client.memberBase.findUniqueOrThrow({
             where: { memberId },
           }),
@@ -164,12 +164,12 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
       },
       fromWithResolved: (memberId: MemberId) => {
         const rFetchedData = ResultAsync.combine([
-          Database.transformResult(
+          Database.wrapResult(
             client.memberBase.findUniqueOrThrow({
               where: { memberId },
             }),
           ),
-          Database.transformResult(
+          Database.wrapResult(
             client.member.findUniqueOrThrow({
               where: { id: memberId },
               include: includeKeys2select(includeKeysRelated),
@@ -196,7 +196,7 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
         });
       },
       fetchMany: (args) => {
-        const rawDataList = Database.transformResult(
+        const rawDataList = Database.wrapResult(
           client.memberBase.findMany(args),
         )
           .mapErr(Database.dbErrorWith(metadata).transformPrismaBridge('fetchMany'))
@@ -210,13 +210,13 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
       },
       fetchManyWithResolved: (args) => {
         const rFetchedData = ResultAsync.combine([
-          Database.transformResult(
+          Database.wrapResult(
             client.memberBase.findMany({
               ...args,
               orderBy: { memberId: 'asc' },
             }),
           ),
-          Database.transformResult(
+          Database.wrapResult(
             client.member.findMany({
               orderBy: { id: 'asc' },
               include: includeKeys2select(includeKeysRelated),
@@ -263,7 +263,7 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
   }
 
   public update(data: Partial<Schema>): DatabaseResult<ThisModel> {
-    return Database.transformResult(
+    return Database.wrapResult(
       this.client.memberBase.update({ data: fillPrismaSkip(data), where: { memberId: this.data.memberId } }),
     )
       .mapErr(this.dbError.transformPrismaBridge('update'))
@@ -272,7 +272,7 @@ export class $MemberBase<Mode extends ModelMode = 'DEFAULT'> implements ThisMode
   }
 
   public delete(): DatabaseResult<void> {
-    return Database.transformResult(
+    return Database.wrapResult(
       this.client.memberBase.delete({ where: { memberId: this.data.memberId } }),
     )
       .mapErr(this.dbError.transformPrismaBridge('delete'))
